@@ -1,7 +1,5 @@
 function setup() {
-  createCanvas(400, 400);
-}
-
-function draw() {
-  background(0);
+  createCanvas(600, 600);
+  background(240, 240, 235);
+  drawWings();
 }
