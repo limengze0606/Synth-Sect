@@ -13,7 +13,7 @@ function isPointInPolygon(px, py, poly) {
   return isInside;
 }
 
-function drawWings(){
+function drawWing(){
   translate(width * 0.3, height * 0.5);
 
   let wLength = random(250, 450); 

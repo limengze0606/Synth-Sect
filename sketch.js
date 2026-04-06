@@ -5,7 +5,7 @@ function setup() {
 
 function draw(){
   background(240, 240, 235);
-  drawWings();
+  drawWing();
 }
 
 function mousePressed() {
