@@ -1,27 +1,93 @@
 let wingOutline = [];
 
+// 【新增】輔助函式：判斷點是否在多邊形內
+function isPointInPolygon(px, py, poly) {
+  let isInside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    let p1 = poly[i];
+    let p2 = poly[j];
+    let intersect = ((p1.y > py) !== (p2.y > py)) &&
+                    (px < (p2.x - p1.x) * (py - p1.y) / (p2.y - p1.y) + p1.x);
+    if (intersect) isInside = !isInside;
+  }
+  return isInside;
+}
+
 function drawWings(){
-  // 將座標原點移至畫面偏左，讓翅膀有空間向右伸展
   translate(width * 0.3, height * 0.5);
 
-  // === 1. 隨機生成翅膀基因參數 ===
-  // 長度 (Aspect Ratio)
   let wLength = random(250, 450); 
-  // 寬度 (Max Width)
   let wWidth = random(80, 250);   
-  // 翅尖上下偏移位置 (Apex Offset)
   let tipYOffset = random(-80, 100); 
-  // 邊緣有機擾動強度 (Noise Strength)
   let noiseStrength = random(2, 10); 
 
-  // === 2. 呼叫生成器，取得輪廓點陣列 ===
+  // 1. 取得翅膀輪廓頂點
   wingOutline = generateWingOutline(wLength, wWidth, tipYOffset, noiseStrength);
 
-  // === 3. 繪製輪廓 ===
-  fill(255, 255, 255, 150); // 半透明白色
-  stroke(30, 30, 40);       // 深灰色邊線
-  strokeWeight(2);
+  // === 【重點開始】Voronoi 與遮罩處理 ===
+  
+  // 啟動畫布狀態儲存與裁切
+  drawingContext.save(); 
+  
+  // 畫出作為裁切範圍的翅膀底色
+  fill(250, 250, 250, 200); 
+  noStroke();
+  beginShape();
+  for (let p of wingOutline) vertex(p.x, p.y);
+  endShape(CLOSE);
+  
+  // 開啟裁切：接下來畫的 Voronoi 都會被限制在這個形狀內
+  drawingContext.clip(); 
 
+  // 2. 收集翅膀內部的隨機種子點
+  let seedPoints = [];
+  let numPoints = 800; // 撒下 800 個點測試
+  
+  for (let i = 0; i < numPoints; i++) {
+    // 設定撒點的隨機範圍 (根據翅膀的長寬做個粗略的包圍盒)
+    let px = random(0, wLength + 50); 
+    let py = random(-wWidth * 1.5, tipYOffset + wWidth * 1.5);
+    
+    // 只保留真的落在輪廓內的點
+    // d3-delaunay 預設接受 [x, y] 的陣列格式
+    if (isPointInPolygon(px, py, wingOutline)) {
+      seedPoints.push([px, py]); 
+    }
+  }
+
+  // 3. 使用 d3-delaunay 生成 Voronoi 細胞
+  if (seedPoints.length > 0) {
+    const delaunay = d3.Delaunay.from(seedPoints);
+    // 設定 Voronoi 的邊界框 [minX, minY, maxX, maxY]
+    const voronoi = delaunay.voronoi([0, -wWidth * 2, wLength + 50, wWidth * 2]);
+
+    // 設定翅脈(細胞邊緣)的樣式
+    stroke(150, 160, 170, 180); 
+    strokeWeight(1);
+    noFill(); 
+
+    // 畫出每一個細胞
+    for (let i = 0; i < seedPoints.length; i++) {
+      let polygon = voronoi.cellPolygon(i);
+      if (polygon) {
+        beginShape();
+        for (let pt of polygon) {
+          vertex(pt[0], pt[1]); // pt[0] 是 x, pt[1] 是 y
+        }
+        endShape(CLOSE);
+      }
+    }
+  }
+
+  // 解除裁切狀態，回到正常的畫布
+  drawingContext.restore(); 
+
+  // === 【重點結束】 ===
+
+  // 4. 最後，補上最外層的深灰色清晰輪廓
+  stroke(30, 30, 40);       
+  strokeWeight(2);
+  noFill();
   beginShape();
   for (let p of wingOutline) {
     vertex(p.x, p.y);
