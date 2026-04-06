@@ -5,7 +5,18 @@ function setup() {
 
 function draw(){
   background(240, 240, 235);
-  drawWing();
+  let mySeed = floor(random(100000));
+
+  push();
+  translate(width * 0.5, height * 0.5);
+  drawWing(mySeed);
+  pop();
+
+  push();
+  translate(width * 0.5, height * 0.5);
+  scale(-1, 1);
+  drawWing(mySeed);
+  pop();
 }
 
 function mousePressed() {

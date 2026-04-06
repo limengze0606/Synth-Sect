@@ -13,9 +13,12 @@ function isPointInPolygon(px, py, poly) {
   return isInside;
 }
 
-function drawWing(){
-  translate(width * 0.3, height * 0.5);
-
+function drawWing(seedValue){
+  if (seedValue !== undefined) {
+    randomSeed(seedValue);
+    noiseSeed(seedValue);
+  }
+    
   let wLength = random(250, 450); 
   let wWidth = random(80, 250);   
   let tipYOffset = random(-80, 100); 
