@@ -18,14 +18,18 @@ function drawWing(seedValue){
     randomSeed(seedValue);
     noiseSeed(seedValue);
   }
-    
-  let wLength = random(250, 450); 
-  let wWidth = random(80, 250);   
-  let tipYOffset = random(-80, 100); 
-  let noiseStrength = random(2, 10); 
+
+  // let wLength = random(250, 450);
+  // let wWidth = random(80, 250);
+  // let tipYOffset = random(-80, 100);
+  let wLength = random(width * 0.25, height * 0.5);
+  let wWidth = random(width * 0.13, height * 0.5);
+  let tipYOffset = random(-width * 0.13, height * 0.15);
+  let noiseStrength = random(2, 10);
+  let wingStyle = floor(random(2));
 
   // 1. 取得翅膀輪廓頂點 (儲存在全域變數 wingOutline)
-  wingOutline = generateWingOutline(wLength, wWidth, tipYOffset, noiseStrength);
+  wingOutline = generateWingOutline(wLength, wWidth, tipYOffset, noiseStrength, wingStyle);
 
   // 2. 開啟裁切，畫出作為裁切範圍的翅膀底色
   drawingContext.save(); 
@@ -117,47 +121,70 @@ function drawVoronoiPattern(wLength, wWidth, tipYOffset) {
  * @param {number} wid - 翅膀最大寬度(向下的幅度)
  * @param {number} tipY - 翅尖的 Y 軸偏移量
  * @param {number} noiseMax - 邊緣不規則擾動的最大值
+ * @param {number} wingStyle - 【新增】0 代表蝴蝶(銳利尖端)，1 代表蜻蜓(圓潤尖端)
  * @returns {p5.Vector[]} 包含輪廓座標的陣列
  */
-function generateWingOutline(len, wid, tipY, noiseMax) {
+function generateWingOutline(len, wid, tipY, noiseMax, wingStyle = 0) {
   let points = [];
   let resolution = 150; 
 
-  // --- A. 前緣 (Leading Edge) ---
-  let l_x1 = 0,           l_y1 = 0;              
-  let l_cx1 = len * 0.3,  l_cy1 = -wid * 0.15;   
-  let l_cx2 = len * 0.7,  l_cy2 = tipY - wid * 0.1; 
-  let l_x2 = len,         l_y2 = tipY;           
+  // 宣告控制點變數
+  let l_x1, l_y1, l_cx1, l_cy1, l_cx2, l_cy2, l_x2, l_y2;
+  let t_x1, t_y1, t_cx1, t_cy1, t_cx2, t_cy2, t_x2, t_y2;
 
+  // 使用 switch 根據 wingStyle 決定控制點的配置
+  switch (wingStyle) {
+    case 0: // === 風格 0：蝴蝶 (銳利尖端、後緣寬大) ===
+      // --- 前緣 ---
+      l_x1 = 0;           l_y1 = 0;              
+      l_cx1 = len * 0.3;  l_cy1 = -wid * 0.15;   
+      l_cx2 = len * 0.7;  l_cy2 = tipY - wid * 0.1; 
+      l_x2 = len;         l_y2 = tipY;           
+      // --- 後緣 ---
+      t_x1 = len;         t_y1 = tipY;           
+      t_cx1 = len * 0.8;  t_cy1 = wid * 0.8;     
+      t_cx2 = len * 0.3;  t_cy2 = wid * 1.2;     
+      t_x2 = 0;           t_y2 = 0;              
+      break;
+
+    case 1: // === 風格 1：蜻蜓 (圓潤尖端、修長平滑) ===
+      // 秘訣：讓 l_cx2 和 t_cx1 的 X 座標都退後一點(例如 0.95)，
+      // 並在 Y 軸上對稱展開，就能畫出完美的圓角翅尖！
+      // --- 前緣 ---
+      l_x1 = 0;           l_y1 = 0;              
+      l_cx1 = len * 0.4;  l_cy1 = -wid * 0.05;      // 前緣較為平坦 
+      l_cx2 = len * 0.95; l_cy2 = tipY - wid * 0.25; // 控制點往上拉 
+      l_x2 = len;         l_y2 = tipY;           
+      // --- 後緣 ---
+      t_x1 = len;         t_y1 = tipY;           
+      t_cx1 = len * 0.95; t_cy1 = tipY + wid * 0.25; // 控制點往下拉 (與前緣形成平滑切線)
+      t_cx2 = len * 0.5;  t_cy2 = wid * 0.5;         // 後緣較為平緩收斂
+      t_x2 = 0;           t_y2 = 0;              
+      break;
+  }
+
+  // --- A. 繪製前緣 (Leading Edge) ---
   for (let i = 0; i <= resolution; i++) {
     let t = i / resolution;
     let x = bezierPoint(l_x1, l_cx1, l_cx2, l_x2, t);
     let y = bezierPoint(l_y1, l_cy1, l_cy2, l_y2, t);
 
-    // 【新增】計算衰減值，讓兩端的 Noise 為 0
     let fade = sin(t * PI); 
-    
-    // 將算出的 noise 乘上 fade
-    let n = map(noise(x * 0.01, y * 0.01), 0, 1, -noiseMax * 0.5, noiseMax * 0.5) * fade;
+    // 蜻蜓的前緣通常比較平滑，我們可以在 style 1 時降低一點雜訊
+    let currentNoiseMax = (wingStyle === 1) ? noiseMax * 0.3 : noiseMax;
+    let n = map(noise(x * 0.01, y * 0.01), 0, 1, -currentNoiseMax * 0.5, currentNoiseMax * 0.5) * fade;
     points.push(createVector(x, y + n));
   }
 
-  // --- B. 後緣 (Trailing Edge) ---
-  let t_x1 = len,         t_y1 = tipY;           
-  let t_cx1 = len * 0.8,  t_cy1 = wid * 0.8;     
-  let t_cx2 = len * 0.3,  t_cy2 = wid * 1.2;     
-  let t_x2 = 0,           t_y2 = 0;              
-
-  // 【修改】i 到 resolution - 1 停止，因為最後一個點(基部原點)讓 endShape(CLOSE) 自動接合就好
+  // --- B. 繪製後緣 (Trailing Edge) ---
   for (let i = 1; i < resolution; i++) { 
     let t = i / resolution;
     let x = bezierPoint(t_x1, t_cx1, t_cx2, t_x2, t);
     let y = bezierPoint(t_y1, t_cy1, t_cy2, t_y2, t);
 
-    // 【新增】後緣也套用衰減值
     let fade = sin(t * PI);
-    
-    let n = map(noise(x * 0.03, y * 0.03 + 1000), 0, 1, -noiseMax * 2, noiseMax * 1.5) * fade;
+    let currentNoiseMax = (wingStyle === 1) ? noiseMax * 0.8 : noiseMax;
+    let n = map(noise(x * 0.03, y * 0.03 + 1000), 0, 1, -currentNoiseMax * 2, currentNoiseMax * 1.5) * fade;
     points.push(createVector(x + n * 0.5, y + n)); 
   }
 
