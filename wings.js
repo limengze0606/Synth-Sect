@@ -13,32 +13,32 @@ function isPointInPolygon(px, py, poly) {
   return isInside;
 }
 
-function drawWing(seedValue){
+function drawWing(g,seedValue){
   if (seedValue !== undefined) {
-    randomSeed(seedValue);
-    noiseSeed(seedValue);
+    g.randomSeed(seedValue);
+    g.noiseSeed(seedValue);
   }
 
   // let wLength = random(250, 450);
   // let wWidth = random(80, 250);
   // let tipYOffset = random(-80, 100);
-  let wLength = random(width * 0.25, height * 0.5);
-  let wWidth = random(width * 0.13, height * 0.5);
-  let tipYOffset = random(-width * 0.13, height * 0.15);
-  let noiseStrength = random(2, 10);
-  let wingStyle = floor(random(2));
+  let wLength = g.random(g.width * 0.25, g.height * 0.5);
+  let wWidth = g.random(g.width * 0.13, g.height * 0.5);
+  let tipYOffset = g.random(-g.width * 0.13, g.height * 0.15);
+  let noiseStrength = g.random(2, 10);
+  let wingStyle = g.floor(g.random(2));
 
   // 1. 取得翅膀輪廓頂點 (儲存在全域變數 wingOutline)
   wingOutline = generateWingOutline(wLength, wWidth, tipYOffset, noiseStrength, wingStyle);
 
   // 2. 開啟裁切，畫出作為裁切範圍的翅膀底色
-  drawingContext.save(); 
-  fill(250, 250, 250, 200); 
-  noStroke();
-  beginShape();
-  for (let p of wingOutline) vertex(p.x, p.y);
-  endShape(CLOSE);
-  drawingContext.clip(); 
+  g.drawingContext.save(); 
+  g.fill(250, 250, 250, 200); 
+  g.noStroke();
+  g.beginShape();
+  for (let p of wingOutline) g.vertex(p.x, p.y);
+  g.endShape(g.CLOSE);
+  g.drawingContext.clip();
 
   // === 3. 隨機決定要繪製哪一種花紋 ===
   // 假設目前規劃 3 種花紋，隨機選 0, 1, 或 2
@@ -47,7 +47,7 @@ function drawWing(seedValue){
   
   if (patternType === 0) {
     // 傳入邊界參數供 Voronoi 撒點使用
-    drawVoronoiPattern(wLength, wWidth, tipYOffset);
+    drawVoronoiPattern(g, wLength, wWidth, tipYOffset);
   } else if (patternType === 1) {
     // 預留：未來的第二種花紋 (例如：平行線、波浪)
     // drawLinesPattern(wLength, wWidth);
@@ -57,17 +57,17 @@ function drawWing(seedValue){
   }
 
   // 4. 解除裁切狀態，回到正常的畫布
-  drawingContext.restore(); 
+  g.drawingContext.restore(); 
 
   // 5. 補上最外層的深灰色清晰輪廓
-  stroke(30, 30, 40);       
-  strokeWeight(2);
-  noFill();
-  beginShape();
+  g.stroke(30, 30, 40);       
+  g.strokeWeight(2);
+  g.noFill();
+  g.beginShape();
   for (let p of wingOutline) {
-    vertex(p.x, p.y);
+    g.vertex(p.x, p.y);
   }
-  endShape(CLOSE);
+  g.endShape(g.CLOSE);
 }
 
 /**
@@ -76,23 +76,23 @@ function drawWing(seedValue){
  * @param {number} wWidth - 翅膀寬度，用於計算撒點邊界
  * @param {number} tipYOffset - 翅尖偏移，用於計算撒點邊界
  */
-function drawVoronoiPattern(wLength, wWidth, tipYOffset) {
+function drawVoronoiPattern(g, wLength, wWidth, tipYOffset) {
   let seedPoints = [];
 
   // 1. 隨機決定要使用哪一種撒點策略 (0, 1, 或 2)
-  let strategyType = floor(random(3));
+  let strategyType = floor(g.random(3));
   // let strategyType = 1;
 
   // 根據策略取得種子點陣列
   switch (strategyType) {
     case 0:
-      seedPoints = scatterUniform(wLength, wWidth, tipYOffset);
+      seedPoints = scatterUniform(g, wLength, wWidth, tipYOffset);
       break;
     case 1:
-      seedPoints = scatterSineDensity(wLength, wWidth, tipYOffset);
+      seedPoints = scatterSineDensity(g, wLength, wWidth, tipYOffset);
       break;
     case 2:
-      seedPoints = scatterJitteredGrid(wLength, wWidth, tipYOffset);
+      seedPoints = scatterJitteredGrid(g, wLength, wWidth, tipYOffset);
       break;
   }
 
@@ -101,20 +101,19 @@ function drawVoronoiPattern(wLength, wWidth, tipYOffset) {
     const delaunay = d3.Delaunay.from(seedPoints);
     const voronoi = delaunay.voronoi([0, -wWidth * 2, wLength + 50, wWidth * 2]);
 
-    stroke(150, 160, 170, 180); 
-    strokeWeight(1);
+    g.stroke(150, 160, 170, 180); 
+    g.strokeWeight(1);
 
     // 3. 畫出每一個細胞
     for (let i = 0; i < seedPoints.length; i++) {
       let polygon = voronoi.cellPolygon(i);
       if (polygon) {
-        fill(255, 255, 255, random(10, 40)); 
-        
-        beginShape();
+        g.fill(255, 255, 255, g.random(10, 40)); 
+        g.beginShape();
         for (let pt of polygon) {
-          vertex(pt[0], pt[1]); 
+          g.vertex(pt[0], pt[1]); 
         }
-        endShape(CLOSE);
+        g.endShape(g.CLOSE);
       }
     }
   }
@@ -199,12 +198,12 @@ function generateWingOutline(len, wid, tipY, noiseMax, wingStyle = 0) {
 /**
  * 策略 0：均勻隨機分布 (基礎款)
  */
-function scatterUniform(wLength, wWidth, tipYOffset) {
+function scatterUniform(g, wLength, wWidth, tipYOffset) {
   let pts = [];
   let numPoints = wLength * 1.5; // 撒點數量，也可以改成依翅膀大小決定
   for (let i = 0; i < numPoints; i++) {
-    let px = random(0, wLength + 50); 
-    let py = random(-wWidth * 1.5, tipYOffset + wWidth * 1.5);
+    let px = g.random(0, wLength + 50); 
+    let py = g.random(-wWidth * 1.5, tipYOffset + wWidth * 1.5);
     
     if (isPointInPolygon(px, py, wingOutline)) {
       pts.push([px, py]); 
@@ -216,34 +215,34 @@ function scatterUniform(wLength, wWidth, tipYOffset) {
 /**
  * 策略 1：正弦波疏密漸層 (加入豐富的隨機變化)
  */
-function scatterSineDensity(wLength, wWidth, tipYOffset) {
+function scatterSineDensity(g, wLength, wWidth, tipYOffset) {
   let pts = [];
   
   // 【變化 1：總撒點數】
   // 決定細胞的整體大小。點越多細胞越小，點越少細胞越大。
-  let numPointsToTry = floor(random(500, 3000)); 
+  let numPointsToTry = floor(g.random(500, 3000)); 
 
   // 【變化 2：波長與頻率】
   // 數值小 = 寬大的粗條紋；數值大 = 密集的細條紋
-  let frequency = random(0.01, 0.08);
+  let frequency = g.random(0.01, 0.08);
 
   // 【變化 3：相位偏移】
   // 隨機推移正弦波的起點 (0 到 2π)，讓條紋位置每次都不同
-  let phaseOffset = random(0, TWO_PI);
+  let phaseOffset = g.random(0, TWO_PI);
 
   // 【變化 4：疏密對比度】
   // minProb 越接近 0，波谷會越空曠；maxProb 越接近 1，波峰會越密集
-  let minProb = random(0.0, 0.15); 
-  let maxProb = random(0.6, 1.0);  
+  let minProb = g.random(0.0, 0.15); 
+  let maxProb = g.random(0.6, 1.0);  
 
   // 【變化 5：波紋方向】(隨機決定要垂直條紋還是同心圓)
   // 0: 垂直條紋 (依 X 軸變化)
   // 1: 同心圓波浪 (依距離變化，像樹木年輪或生長紋)
-  let waveType = floor(random(2));
+  let waveType = floor(g.random(2));
 
   for (let i = 0; i < numPointsToTry; i++) {
-    let px = random(0, wLength + 50); 
-    let py = random(-wWidth * 1.5, tipYOffset + wWidth * 1.5);
+    let px = g.random(0, wLength + 50); 
+    let py = g.random(-wWidth * 1.5, tipYOffset + wWidth * 1.5);
     
     if (isPointInPolygon(px, py, wingOutline)) {
       
@@ -262,7 +261,7 @@ function scatterSineDensity(wLength, wWidth, tipYOffset) {
       // 將波的值 (-1 到 1) 映射到我們設定的機率範圍
       let keepProbability = map(waveValue, -1, 1, minProb, maxProb); 
       
-      if (random() < keepProbability) {
+      if (g.random() < keepProbability) {
         pts.push([px, py]); 
       }
     }
@@ -273,7 +272,7 @@ function scatterSineDensity(wLength, wWidth, tipYOffset) {
 /**
  * 策略 2：方向性網格加雜訊 (順應翅膀"基部到尖端"的實際向量)
  */
-function scatterJitteredGrid(wLength, wWidth, tipYOffset) {
+function scatterJitteredGrid(g, wLength, wWidth, tipYOffset) {
   let pts = [];
   
   // 【關鍵修改 1：拉大比例差距】
@@ -288,8 +287,8 @@ function scatterJitteredGrid(wLength, wWidth, tipYOffset) {
       
       // 【關鍵修改 2：限制垂直方向的雜訊】
       // 長度方向(U)可以亂一點沒關係，但寬度方向(V)要盡量保持直線，才能擠出細長的平行細胞
-      let jitterU = random(-uStep * 0.3, uStep * 0.3); 
-      let jitterV = random(-vStep * 0.4, vStep * 0.4);
+      let jitterU = g.random(-uStep * 0.3, uStep * 0.3); 
+      let jitterV = g.random(-vStep * 0.4, vStep * 0.4);
       
       let finalU = u + jitterU;
       let finalV = v + jitterV;
