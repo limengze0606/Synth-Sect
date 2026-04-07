@@ -1,5 +1,6 @@
 function drawBackground(pg){
     let backgroundType = floor(random(2)); 
+    //let backgroundType = 1; 
     switch (backgroundType) {
     case 0:
       ocean(pg);
@@ -23,13 +24,13 @@ function ocean(pg) {
   pg.strokeWeight(pg.height * 0.001);
   
   // 繪製線條模擬波紋
-  for (let i = 0; i < 8000; i++) {
+  for (let i = 0; i < 16000; i++) {
     let px = (random(1) - 0.5) * pg.width;
     // 計算 y 座標，集中在畫布下方
-    let py = floor((1 - pow(random(1), 0.25)) * pg.height / 3.5);
-    py = constrain(py, 0, pg.height); // 確保 y 座標在範圍內
+    let distribution = pow(random(1), 4); 
+    let py = (distribution * pg.height) - (pg.height / 2);
     
-    let sz = random(100, 180); // 隨機線條長度
+    let sz = random(pg.width * 0.15, pg.width * 0.4); // 隨機線條長度
     let bright = random(1) * 100; // 隨機亮度
     
     pg.stroke(175, 177, 180, bright);
@@ -51,8 +52,8 @@ function sky(pg) {
   for (let i = 0; i < 50000; i++) {
     let px = (random(1) - 0.5) * pg.width;
     // 計算 y 座標，集中在畫布上方
-    let py = floor((1 - pow(random(1), 0.25)) * pg.height / 2) * -1;
-    py = constrain(py, -pg.height, 0); // 確保 y 座標在範圍內
+    let distribution = pow(random(1), 4) - 1; 
+    let py = (distribution * pg.height) + (pg.height / 2);
     
     let sz = random(20, 40); // 隨機線條長度
     let bright = random(-20, 20) + varietySky[2];

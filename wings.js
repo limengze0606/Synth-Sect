@@ -42,8 +42,8 @@ function drawWing(g,seedValue){
 
   // === 3. 隨機決定要繪製哪一種花紋 ===
   // 假設目前規劃 3 種花紋，隨機選 0, 1, 或 2
-  let patternType = floor(random(3)); 
-  //let patternType = 0;
+  //let patternType = floor(random(3)); 
+  let patternType = 0;
   
   if (patternType === 0) {
     // 傳入邊界參數供 Voronoi 撒點使用
