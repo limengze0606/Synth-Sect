@@ -10,6 +10,9 @@ function setup() {
 function draw() {
   // 所有的繪製邏輯現在都發生在 pg 上
   pg.background(240, 240, 235);
+
+  ocean(pg); // 繪製海洋
+  sky(pg);   // 繪製天空
   
   let mySeed = floor(random(100000));
   let centerX = pg.width * 0.5 + random(-30, 30);
@@ -28,6 +31,8 @@ function draw() {
   drawWingPair(pg, mySeed, 0, flapAngle, 1.0);
 
   pg.pop();
+
+  applyNoise(0.1); // 應用雜訊效果
 
   // 最後一步：將畫好的 pg 一次性貼到畫布上
   image(pg, 0, 0);
