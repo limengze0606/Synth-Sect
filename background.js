@@ -1,3 +1,15 @@
+function drawBackground(pg){
+    let backgroundType = floor(random(2)); 
+    switch (backgroundType) {
+    case 0:
+      ocean(pg);
+      break;
+    case 1:
+      sky(pg);
+      break;
+  }
+}
+
 function ocean(pg) {
   pg.push();
   pg.translate(pg.width / 2, pg.height / 2); // 將原點移到畫布中心

@@ -11,8 +11,7 @@ function draw() {
   // 所有的繪製邏輯現在都發生在 pg 上
   pg.background(240, 240, 235);
 
-  ocean(pg); // 繪製海洋
-  sky(pg);   // 繪製天空
+  drawBackground(pg);
   
   let mySeed = floor(random(100000));
   let centerX = pg.width * 0.5 + random(-30, 30);
