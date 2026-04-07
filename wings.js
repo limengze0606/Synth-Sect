@@ -78,16 +78,22 @@ function drawWing(seedValue){
  */
 function drawVoronoiPattern(wLength, wWidth, tipYOffset) {
   let seedPoints = [];
-  let numPoints = 800; // 撒點數量，也可以改成依翅膀大小決定 (如 wLength * 2)
-  
-  // 1. 收集落在翅膀內部的隨機種子點
-  for (let i = 0; i < numPoints; i++) {
-    let px = random(0, wLength + 50); 
-    let py = random(-wWidth * 1.5, tipYOffset + wWidth * 1.5);
-    
-    if (isPointInPolygon(px, py, wingOutline)) {
-      seedPoints.push([px, py]); 
-    }
+
+  // 1. 隨機決定要使用哪一種撒點策略 (0, 1, 或 2)
+  let strategyType = floor(random(3));
+  // let strategyType = 1;
+
+  // 根據策略取得種子點陣列
+  switch (strategyType) {
+    case 0:
+      seedPoints = scatterUniform(wLength, wWidth, tipYOffset);
+      break;
+    case 1:
+      seedPoints = scatterSineDensity(wLength, wWidth, tipYOffset);
+      break;
+    case 2:
+      seedPoints = scatterJitteredGrid(wLength, wWidth, tipYOffset);
+      break;
   }
 
   // 2. 使用 d3-delaunay 生成細胞
@@ -102,7 +108,6 @@ function drawVoronoiPattern(wLength, wWidth, tipYOffset) {
     for (let i = 0; i < seedPoints.length; i++) {
       let polygon = voronoi.cellPolygon(i);
       if (polygon) {
-        // 給每個細胞一點隨機的白色透明度，創造膜的質感
         fill(255, 255, 255, random(10, 40)); 
         
         beginShape();
@@ -189,4 +194,114 @@ function generateWingOutline(len, wid, tipY, noiseMax, wingStyle = 0) {
   }
 
   return points;
+}
+
+/**
+ * 策略 0：均勻隨機分布 (基礎款)
+ */
+function scatterUniform(wLength, wWidth, tipYOffset) {
+  let pts = [];
+  let numPoints = wLength * 1.5; // 撒點數量，也可以改成依翅膀大小決定
+  for (let i = 0; i < numPoints; i++) {
+    let px = random(0, wLength + 50); 
+    let py = random(-wWidth * 1.5, tipYOffset + wWidth * 1.5);
+    
+    if (isPointInPolygon(px, py, wingOutline)) {
+      pts.push([px, py]); 
+    }
+  }
+  return pts;
+}
+
+/**
+ * 策略 1：正弦波疏密漸層 (加入豐富的隨機變化)
+ */
+function scatterSineDensity(wLength, wWidth, tipYOffset) {
+  let pts = [];
+  
+  // 【變化 1：總撒點數】
+  // 決定細胞的整體大小。點越多細胞越小，點越少細胞越大。
+  let numPointsToTry = floor(random(500, 3000)); 
+
+  // 【變化 2：波長與頻率】
+  // 數值小 = 寬大的粗條紋；數值大 = 密集的細條紋
+  let frequency = random(0.01, 0.08);
+
+  // 【變化 3：相位偏移】
+  // 隨機推移正弦波的起點 (0 到 2π)，讓條紋位置每次都不同
+  let phaseOffset = random(0, TWO_PI);
+
+  // 【變化 4：疏密對比度】
+  // minProb 越接近 0，波谷會越空曠；maxProb 越接近 1，波峰會越密集
+  let minProb = random(0.0, 0.15); 
+  let maxProb = random(0.6, 1.0);  
+
+  // 【變化 5：波紋方向】(隨機決定要垂直條紋還是同心圓)
+  // 0: 垂直條紋 (依 X 軸變化)
+  // 1: 同心圓波浪 (依距離變化，像樹木年輪或生長紋)
+  let waveType = floor(random(2));
+
+  for (let i = 0; i < numPointsToTry; i++) {
+    let px = random(0, wLength + 50); 
+    let py = random(-wWidth * 1.5, tipYOffset + wWidth * 1.5);
+    
+    if (isPointInPolygon(px, py, wingOutline)) {
+      
+      let waveValue = 0;
+      
+      if (waveType === 0) {
+        // 垂直條紋：只看 X 座標
+        waveValue = sin(px * frequency + phaseOffset); 
+      } else {
+        // 同心圓生長紋：計算點到根部 (0,0) 的距離
+        let d = dist(0, 0, px, py);
+        // 距離產生的波浪通常需要稍微小一點的頻率才好看
+        waveValue = sin(d * frequency * 0.8 + phaseOffset); 
+      }
+      
+      // 將波的值 (-1 到 1) 映射到我們設定的機率範圍
+      let keepProbability = map(waveValue, -1, 1, minProb, maxProb); 
+      
+      if (random() < keepProbability) {
+        pts.push([px, py]); 
+      }
+    }
+  }
+  return pts;
+}
+
+/**
+ * 策略 2：方向性網格加雜訊 (順應翅膀"基部到尖端"的實際向量)
+ */
+function scatterJitteredGrid(wLength, wWidth, tipYOffset) {
+  let pts = [];
+  
+  // 【關鍵修改 1：拉大比例差距】
+  let uStep = 10;  // u：順著翅膀生長方向 (擠得非常密，這樣邊界才會被往前後拉長)
+  let vStep = 40; // v：垂直方向的間距 (拉得非常寬)
+  
+  let angle = atan2(tipYOffset, wLength);
+  let totalLength = dist(0, 0, wLength, tipYOffset);
+  
+  for (let u = -50; u < totalLength + 50; u += uStep) {
+    for (let v = -wWidth * 2; v < wWidth * 2; v += vStep) {
+      
+      // 【關鍵修改 2：限制垂直方向的雜訊】
+      // 長度方向(U)可以亂一點沒關係，但寬度方向(V)要盡量保持直線，才能擠出細長的平行細胞
+      let jitterU = random(-uStep * 0.3, uStep * 0.3); 
+      let jitterV = random(-vStep * 0.4, vStep * 0.4);
+      
+      let finalU = u + jitterU;
+      let finalV = v + jitterV;
+
+      // 旋轉矩陣
+      let finalX = finalU * cos(angle) - finalV * sin(angle);
+      let finalY = finalU * sin(angle) + finalV * cos(angle);
+
+      if (isPointInPolygon(finalX, finalY, wingOutline)) {
+        pts.push([finalX, finalY]); 
+      }
+    }
+  }
+  return pts;
 }
