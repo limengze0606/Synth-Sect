@@ -300,7 +300,7 @@ function scatterJitteredGrid(g, wLength, wWidth, tipYOffset) {
 
 function drawGradualStroke(g, outline, forceColorType) {
   // 設定顏色與粗細的控制參數
-  let colorType = forceColorType !== undefined ? forceColorType : g.floor(g.random(1));
+  let colorType = forceColorType !== undefined ? forceColorType : g.floor(g.random(1, 2));
   let weightPivot = 0.95; // 線條最細（w2）的位置
 
   for (let i = 0; i < outline.length - 1; i++) {
@@ -311,6 +311,9 @@ function drawGradualStroke(g, outline, forceColorType) {
     switch (colorType) {
       case 0:
         strokeCol = getSimpleLerpColor(g, rawProgress, "#281E50", "#64C8FF");
+        break;
+      case 1:
+        strokeCol = getNMMColor(g, rawProgress);
         break;
     }
 
@@ -345,4 +348,36 @@ function getSimpleLerpColor(g, p, c1, c2) {
                   g.map(p, 0, colorPivot, 0, 1) : 
                   g.map(p, colorPivot, 1, 1, 0);
   return g.lerpColor(g.color(c1), g.color(c2), g.constrain(cProgress + n, 0, 1));
+}
+
+/**
+ * NMM 模擬顏色邏輯：使用柏林雜訊 (Perlin Noise) 模擬不規則金屬反光
+ * @param {p5.Graphics} g 
+ * @param {number} p 進度 (0~1)
+ */
+function getNMMColor(g, p) {
+  // 1. 設定金屬基調顏色
+  let baseColor = g.color("#14191e");         // 陰影（極深色）
+  let midColor = g.color("#646e82");       // 中間過渡色
+  let highlightColor = g.color("#ffffff"); // 高光（純白）
+
+  // 2. 使用柏林雜訊產生不規則的光感
+  // 這裡的 10 是「雜訊頻率（縮放比例）」。數字越大，明暗變化越密集；數字越小，變化越平緩。
+  let noiseVal = g.noise(p * 50); 
+  
+  // 3. 讓光感變銳利
+  // 注意：g.noise() 回傳的範圍本來就是 0~1，所以這裡不需要像 sin 一樣用 g.map() 轉換。
+  let shineFactor = g.pow(noiseVal, 2); // 5次方讓高光範圍縮小且過渡更硬
+
+  // 4. 混合顏色
+  let finalC;
+  if (shineFactor < 0.5) {
+    // 陰影到中間色
+    finalC = g.lerpColor(baseColor, midColor, shineFactor * 2);
+  } else {
+    // 中間色到極致高光
+    finalC = g.lerpColor(midColor, highlightColor, (shineFactor - 0.5) * 2);
+  }
+
+  return finalC;
 }
