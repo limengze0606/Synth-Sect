@@ -298,19 +298,15 @@ function scatterJitteredGrid(g, wLength, wWidth, tipYOffset) {
   return pts;
 }
 
-function drawGradualStroke(g, outline) {
+function drawGradualStroke(g, outline, forceColorType) {
   // 設定顏色與粗細的控制參數
-  let colorPivot = 0.7;  // 顏色最亮（c2）的位置
+  let colorType = forceColorType !== undefined ? forceColorType : g.floor(g.random(1));
   let weightPivot = 0.95; // 線條最細（w2）的位置
 
   for (let i = 0; i < outline.length - 1; i++) {
     let p1 = outline[i];
     let p2 = outline[i + 1];
     let rawProgress = i / outline.length;
-
-    // --- 1. 顏色控制邏輯 ---
-    let colorType = floor(g.random(1));
-    // let strategyType = 1;
 
     switch (colorType) {
       case 0:
