@@ -60,14 +60,7 @@ function drawWing(g,seedValue){
   g.drawingContext.restore(); 
 
   // 5. 補上最外層的深灰色清晰輪廓
-  g.stroke(30, 30, 40);       
-  g.strokeWeight(2);
-  g.noFill();
-  g.beginShape();
-  for (let p of wingOutline) {
-    g.vertex(p.x, p.y);
-  }
-  g.endShape(g.CLOSE);
+  drawGradualStroke(g, wingOutline);
 }
 
 /**
@@ -303,4 +296,47 @@ function scatterJitteredGrid(g, wLength, wWidth, tipYOffset) {
     }
   }
   return pts;
+}
+
+function drawGradualStroke(g, outline) {
+  // 設定顏色與粗細的控制參數
+  let colorPivot = 0.7;  // 顏色最亮（c2）的位置
+  let weightPivot = 0.95; // 線條最細（w2）的位置
+
+  for (let i = 0; i < outline.length - 1; i++) {
+    let p1 = outline[i];
+    let p2 = outline[i + 1];
+    let rawProgress = i / outline.length;
+
+    // --- 1. 顏色控制邏輯 ---
+    let cProgress;
+    if (rawProgress < colorPivot) {
+      cProgress = g.map(rawProgress, 0, colorPivot, 0, 1);
+    } else {
+      cProgress = g.map(rawProgress, colorPivot, 1, 1, 0);
+    }
+    let strokeCol = g.lerpColor(g.color(40, 30, 80), g.color(100, 200, 255), cProgress);
+
+    // --- 2. 粗細控制邏輯 ---
+    let wProgress;
+    if (rawProgress < weightPivot) {
+      wProgress = g.map(rawProgress, 0, weightPivot, 0, 1);
+    } else {
+      wProgress = g.map(rawProgress, weightPivot, 1, 1, 0);
+    }
+    // 這裡使用 wProgress 進行映射：0 (兩端) 為 3px，1 (Pivot) 為 0.5px
+    let sw = g.map(wProgress, 0, 1, 3, 0.5);
+
+    // --- 3. 繪製 ---
+    g.stroke(strokeCol);
+    g.strokeWeight(sw);
+    g.line(p1.x, p1.y, p2.x, p2.y);
+  }
+  
+  // 補上最後一個點到起點的連線，確保閉合
+  let pFirst = outline[0];
+  let pLast = outline[outline.length - 1];
+  g.stroke(g.color(40, 30, 80)); 
+  g.strokeWeight(3);
+  g.line(pLast.x, pLast.y, pFirst.x, pFirst.y);
 }
