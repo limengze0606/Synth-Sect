@@ -458,26 +458,55 @@ function applyNMMVoronoiStyle(g, progress, colorSet, fillCol) {
  */
 function getVoronoiFillColor(g, progress, fillStyle, cellX, cellY) {
   let c;
+  //fillStyle = 3;
   switch (fillStyle) {
-    case 0:
-      // 0: 珍珠與薄膜干涉 (稍微帶一點粉藍/粉紫色的半透明白)
-      c = g.color(240 + g.random(-10, 10), 245, 255, g.random(20, 60));
+    case 0: {
+      // === 0: 珍珠與薄膜干涉 ===
+      let n = g.noise(cellX * 0.015, cellY * 0.015);
+      let pink = g.color("#FFBEDC");
+      pink.setAlpha(130); // 正確設定透明度的方式
+      let cyan = g.color("#b4f0ff");
+      cyan.setAlpha(130);
+      c = g.lerpColor(pink, cyan, n);
       break;
-    case 1:
-      // 1: 生物能量呼吸感 (基部亮且不透明，翅尖暗且透明)
-      let bioAlpha = g.map(progress, 0, 1, 150, 10);
-      c = g.color(255, 255, 250, bioAlpha);
+    }
+
+    case 1: {
+      // === 1: 生物能量呼吸感 ===
+      let coreEnergy = g.color("#00e5fe"); 
+      coreEnergy.setAlpha(180);
+      let fadeEnergy = g.color("#0f0064"); 
+      fadeEnergy.setAlpha(200);
+      
+      let energyLevel = 1.0 - g.pow(progress, 0.6);
+      c = g.lerpColor(fadeEnergy, coreEnergy, energyLevel);
       break;
-    case 2:
-      // 2: 仿舊有機質羊皮紙 (基部琥珀色，漸層到透明)
+    }
+
+    case 2: {
+      // === 2: 仿舊有機質羊皮紙 ===
       let amber = g.color("#d4a373");
-      let transparent = g.color(255, 255, 255, 0);
-      c = g.lerpColor(amber, transparent, progress * 1.5); // 提早變透明
+      amber.setAlpha(220);
+      let transparent = g.color("#ffffff");
+      transparent.setAlpha(0);
+      c = g.lerpColor(amber, transparent, progress * 1.5); 
       break;
-    case 3:
-      // 3: 磨砂玻璃 (純黑白灰，加上極端亂數透明度)
-      c = g.color(255, 255, 255, g.random(5, 90));
+    }
+
+    case 3: {
+      // === 3: 磨砂玻璃 ===
+      // 這裡沒有用到 lerpColor，所以可以直接用標準的 RGB 寫法最快
+      let frostNoise = g.noise(cellX * 0.04, cellY * 0.04 + 1000);
+      if (frostNoise > 0.55) {
+        c = g.color(230, 230, 230, 255);
+      } else if (frostNoise < 0.35) {
+        c = g.color(200, 200, 200, 15);
+      } else {
+        c = g.color(255, 255, 255, 60);
+      }
       break;
+    }
   }
+  
   return c;
 }
