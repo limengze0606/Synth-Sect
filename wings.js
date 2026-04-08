@@ -309,13 +309,14 @@ function drawGradualStroke(g, outline) {
     let rawProgress = i / outline.length;
 
     // --- 1. 顏色控制邏輯 ---
-    let cProgress;
-    if (rawProgress < colorPivot) {
-      cProgress = g.map(rawProgress, 0, colorPivot, 0, 1);
-    } else {
-      cProgress = g.map(rawProgress, colorPivot, 1, 1, 0);
+    let colorType = floor(g.random(1));
+    // let strategyType = 1;
+
+    switch (colorType) {
+      case 0:
+        strokeCol = getSimpleLerpColor(g, rawProgress, "#281E50", "#64C8FF");
+        break;
     }
-    let strokeCol = g.lerpColor(g.color(40, 30, 80), g.color(100, 200, 255), cProgress);
 
     // --- 2. 粗細控制邏輯 ---
     let wProgress;
@@ -339,4 +340,13 @@ function drawGradualStroke(g, outline) {
   g.stroke(g.color(40, 30, 80)); 
   g.strokeWeight(3);
   g.line(pLast.x, pLast.y, pFirst.x, pFirst.y);
+}
+
+function getSimpleLerpColor(g, p, c1, c2) {
+  let colorPivot = 0.7;  // 顏色最亮（c2）的位置
+
+  let cProgress = (p < colorPivot) ? 
+                  g.map(p, 0, colorPivot, 0, 1) : 
+                  g.map(p, colorPivot, 1, 1, 0);
+  return g.lerpColor(g.color(c1), g.color(c2), cProgress);
 }
