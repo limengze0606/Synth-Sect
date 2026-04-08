@@ -340,9 +340,9 @@ function drawGradualStroke(g, outline, forceColorType) {
 
 function getSimpleLerpColor(g, p, c1, c2) {
   let colorPivot = 0.7;  // 顏色最亮（c2）的位置
-
+  let n = g.noise(p * 10) * 0.3;
   let cProgress = (p < colorPivot) ? 
                   g.map(p, 0, colorPivot, 0, 1) : 
                   g.map(p, colorPivot, 1, 1, 0);
-  return g.lerpColor(g.color(c1), g.color(c2), cProgress);
+  return g.lerpColor(g.color(c1), g.color(c2), g.constrain(cProgress + n, 0, 1));
 }
