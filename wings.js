@@ -47,7 +47,7 @@ function drawWing(g,seedValue, forceColorType, ColorSet){
   
   if (patternType === 0) {
     // 傳入邊界參數供 Voronoi 撒點使用
-    drawVoronoiPattern(g, wLength, wWidth, tipYOffset);
+    drawVoronoiPattern(g, wLength, wWidth, tipYOffset, forceColorType, ColorSet);
   } else if (patternType === 1) {
     // 預留：未來的第二種花紋 (例如：平行線、波浪)
     // drawLinesPattern(wLength, wWidth);
@@ -65,28 +65,18 @@ function drawWing(g,seedValue, forceColorType, ColorSet){
 
 /**
  * 繪製 Voronoi 翅脈網格
- * @param {number} wLength - 翅膀長度，用於計算撒點邊界
- * @param {number} wWidth - 翅膀寬度，用於計算撒點邊界
- * @param {number} tipYOffset - 翅尖偏移，用於計算撒點邊界
+ * 【修改這裡】新增 forceColorType, ColorSet 參數
  */
-function drawVoronoiPattern(g, wLength, wWidth, tipYOffset) {
+function drawVoronoiPattern(g, wLength, wWidth, tipYOffset, forceColorType, ColorSet) {
   let seedPoints = [];
 
-  // 1. 隨機決定要使用哪一種撒點策略 (0, 1, 或 2)
   let strategyType = floor(g.random(3));
-  // let strategyType = 1;
 
-  // 根據策略取得種子點陣列
+  // 根據策略取得種子點陣列...
   switch (strategyType) {
-    case 0:
-      seedPoints = scatterUniform(g, wLength, wWidth, tipYOffset);
-      break;
-    case 1:
-      seedPoints = scatterSineDensity(g, wLength, wWidth, tipYOffset);
-      break;
-    case 2:
-      seedPoints = scatterJitteredGrid(g, wLength, wWidth, tipYOffset);
-      break;
+    case 0: seedPoints = scatterUniform(g, wLength, wWidth, tipYOffset); break;
+    case 1: seedPoints = scatterSineDensity(g, wLength, wWidth, tipYOffset); break;
+    case 2: seedPoints = scatterJitteredGrid(g, wLength, wWidth, tipYOffset); break;
   }
 
   // 2. 使用 d3-delaunay 生成細胞
@@ -94,14 +84,31 @@ function drawVoronoiPattern(g, wLength, wWidth, tipYOffset) {
     const delaunay = d3.Delaunay.from(seedPoints);
     const voronoi = delaunay.voronoi([0, -wWidth * 2, wLength + 50, wWidth * 2]);
 
-    g.stroke(150, 160, 170, 180); 
     g.strokeWeight(1);
 
     // 3. 畫出每一個細胞
     for (let i = 0; i < seedPoints.length; i++) {
       let polygon = voronoi.cellPolygon(i);
       if (polygon) {
-        g.fill(255, 255, 255, g.random(10, 40)); 
+        
+        // --- 取得這個細胞的進度 (0.0 ~ 1.0) ---
+        let cellX = seedPoints[i][0];
+        let progress = g.constrain(cellX / wLength, 0, 1); 
+
+        // === 顏色模式切換架構 ===
+        switch (forceColorType) {
+          case 0:
+            applySimpleVoronoiStyle(g, progress);
+            break;
+            
+          case 1:
+            applyNMMVoronoiStyle(g, progress, ColorSet);
+            break;
+        }
+
+        g.strokeWeight(1); 
+
+        // 繪製多邊形
         g.beginShape();
         for (let pt of polygon) {
           g.vertex(pt[0], pt[1]); 
@@ -415,4 +422,36 @@ function getNMMColor(g, p, nmmColorSet) {
   }
 
   return finalC;
+}
+
+/**
+ * Voronoi 網格模式 0：基礎漸層樣式
+ */
+function applySimpleVoronoiStyle(g, progress) {
+  // 取得基礎漸層色
+  let strokeCol = getSimpleLerpColor(g, progress, "#281E50", "#80a9be");
+  strokeCol.setAlpha(180); 
+  
+  // 設定隨機半透明白色填色
+  let fillCol = g.color(255, 255, 255, g.random(10, 40));
+
+  // 執行上色
+  g.stroke(strokeCol);
+  g.fill(fillCol);
+}
+
+/**
+ * Voronoi 網格模式 1：NMM 金屬光澤樣式
+ */
+function applyNMMVoronoiStyle(g, progress, colorSet) {
+  // 取得 NMM 金屬光澤色
+  let strokeCol = getNMMColor(g, progress, colorSet);
+  strokeCol.setAlpha(200); 
+  
+  // 設定填色 (目前維持半透明白，後續想讓網格內部也有金屬感可以在這裡改)
+  let fillCol = g.color(255, 255, 255, g.random(10, 40));
+
+  // 執行上色
+  g.stroke(strokeCol);
+  g.fill(fillCol);
 }
