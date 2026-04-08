@@ -1,38 +1,47 @@
-let pg; // 宣告離屏畫布變數
+let pg; 
 
 function setup() {
   createCanvas(600, 600);
-  // 1. 建立一個和畫布一樣大的 PGraphics
   pg = createGraphics(600, 600);
   noLoop();
 }
 
 function draw() {
-  // 所有的繪製邏輯現在都發生在 pg 上
   pg.background(240, 240, 235);
-
   drawBackground(pg);
   
   let mySeed = floor(random(100000));
-  let centerX = pg.width * 0.5 + random(-30, 30);
-  let centerY = pg.height * 0.5 + random(-30, 30);
-  let bodyRotation = random(-PI / 12, PI / 12);
-  let flapAngle = random(-PI / 4, PI / 4);
-  let globalScale = random(0.8, 1.1);
+  let fillStyle = floor(random(4));
   let hasSecondPair = floor(random(2));
   let forceColorType = floor(random(2));
   let ColorSet = floor(random(2));
+  let isRandomMode = floor(random(2));
 
-  // === 【新增】決定網格內部的填色風格 (0~3 共四種) ===
-  // 0: 珍珠薄膜, 1: 生物發光, 2: 復古羊皮紙, 3: 磨砂玻璃
-  let fillStyle = floor(random(4));
+  // --- 【修改部分】位置與角度的切換邏輯 ---
+  let centerX, centerY, bodyRotation, flapAngle, globalScale;
+
+  if (isRandomMode) {
+    // 模式 A：原本的隨機狀態
+    centerX = pg.width * 0.5 + random(-30, 30);
+    centerY = pg.height * 0.5 + random(-30, 30);
+    bodyRotation = random(-PI / 12, PI / 12);
+    flapAngle = random(-PI / 4, PI / 4);
+    globalScale = random(0.8, 1.1);
+  } else {
+    // 模式 B：畫布正中央且無旋轉
+    centerX = pg.width * 0.5;
+    centerY = pg.height * 0.5;
+    bodyRotation = 0;   // 無旋轉
+    flapAngle = 0;      // 翅膀拍打角度歸零（或設為固定值）
+    globalScale = 1.0;  // 標準比例
+  }
+  // ------------------------------------
 
   pg.push();
   pg.translate(centerX, centerY);
   pg.rotate(bodyRotation);
   pg.scale(globalScale);
 
-  // 傳遞 pg 進去，確保子函式也是畫在同一張「紙」上
   if (hasSecondPair == 1){
     drawWingPair(pg, mySeed + 1, 10, flapAngle + PI/8, 0.65, forceColorType, ColorSet, fillStyle);
   }
@@ -40,10 +49,12 @@ function draw() {
 
   pg.pop();
 
-  applyNoise(0.1); // 應用雜訊效果
-
-  // 最後一步：將畫好的 pg 一次性貼到畫布上
+  applyNoise(0.1); 
   image(pg, 0, 0);
+  
+  // 可以在畫面上印出當前模式（選配）
+  fill(0);
+  noStroke();
 }
 
 /**
