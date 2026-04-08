@@ -19,6 +19,7 @@ function draw() {
   let bodyRotation = random(-PI / 12, PI / 12);
   let flapAngle = random(-PI / 4, PI / 4);
   let globalScale = random(0.8, 1.1);
+  let hasSecondPair = floor(random(2));
 
   pg.push();
   pg.translate(centerX, centerY);
@@ -26,7 +27,9 @@ function draw() {
   pg.scale(globalScale);
 
   // 傳遞 pg 進去，確保子函式也是畫在同一張「紙」上
-  drawWingPair(pg, mySeed + 1, 10, flapAngle + PI/6, 0.85);
+  if (hasSecondPair == 1){
+    drawWingPair(pg, mySeed + 1, 10, flapAngle + PI/8, 0.65);
+  }
   drawWingPair(pg, mySeed, 0, flapAngle, 1.0);
 
   pg.pop();
