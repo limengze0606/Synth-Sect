@@ -13,7 +13,7 @@ function isPointInPolygon(px, py, poly) {
   return isInside;
 }
 
-function drawWing(g,seedValue, forceColorType, ColorSet){
+function drawWing(g,seedValue, forceColorType, ColorSet, fillStyle){
   if (seedValue !== undefined) {
     g.randomSeed(seedValue);
     g.noiseSeed(seedValue);
@@ -47,7 +47,7 @@ function drawWing(g,seedValue, forceColorType, ColorSet){
   
   if (patternType === 0) {
     // 傳入邊界參數供 Voronoi 撒點使用
-    drawVoronoiPattern(g, wLength, wWidth, tipYOffset, forceColorType, ColorSet);
+    drawVoronoiPattern(g, wLength, wWidth, tipYOffset, forceColorType, ColorSet, fillStyle);
   } else if (patternType === 1) {
     // 預留：未來的第二種花紋 (例如：平行線、波浪)
     // drawLinesPattern(wLength, wWidth);
@@ -67,7 +67,7 @@ function drawWing(g,seedValue, forceColorType, ColorSet){
  * 繪製 Voronoi 翅脈網格
  * 【修改這裡】新增 forceColorType, ColorSet 參數
  */
-function drawVoronoiPattern(g, wLength, wWidth, tipYOffset, forceColorType, ColorSet) {
+function drawVoronoiPattern(g, wLength, wWidth, tipYOffset, forceColorType, ColorSet, fillStyle) {
   let seedPoints = [];
 
   let strategyType = floor(g.random(3));
@@ -90,19 +90,22 @@ function drawVoronoiPattern(g, wLength, wWidth, tipYOffset, forceColorType, Colo
     for (let i = 0; i < seedPoints.length; i++) {
       let polygon = voronoi.cellPolygon(i);
       if (polygon) {
-        
         // --- 取得這個細胞的進度 (0.0 ~ 1.0) ---
         let cellX = seedPoints[i][0];
+        let cellY = seedPoints[i][1];
         let progress = g.constrain(cellX / wLength, 0, 1); 
+
+        // === 【新增】獨立計算填色 ===
+        let fillCol = getVoronoiFillColor(g, progress, fillStyle, cellX, cellY);
 
         // === 顏色模式切換架構 ===
         switch (forceColorType) {
           case 0:
-            applySimpleVoronoiStyle(g, progress);
+            applySimpleVoronoiStyle(g, progress, fillCol);
             break;
             
           case 1:
-            applyNMMVoronoiStyle(g, progress, ColorSet);
+            applyNMMVoronoiStyle(g, progress, ColorSet, fillCol);
             break;
         }
 
@@ -427,13 +430,10 @@ function getNMMColor(g, p, nmmColorSet) {
 /**
  * Voronoi 網格模式 0：基礎漸層樣式
  */
-function applySimpleVoronoiStyle(g, progress) {
+function applySimpleVoronoiStyle(g, progress, fillCol) {
   // 取得基礎漸層色
   let strokeCol = getSimpleLerpColor(g, progress, "#281E50", "#80a9be");
   strokeCol.setAlpha(180); 
-  
-  // 設定隨機半透明白色填色
-  let fillCol = g.color(255, 255, 255, g.random(10, 40));
 
   // 執行上色
   g.stroke(strokeCol);
@@ -443,15 +443,41 @@ function applySimpleVoronoiStyle(g, progress) {
 /**
  * Voronoi 網格模式 1：NMM 金屬光澤樣式
  */
-function applyNMMVoronoiStyle(g, progress, colorSet) {
+function applyNMMVoronoiStyle(g, progress, colorSet, fillCol) {
   // 取得 NMM 金屬光澤色
   let strokeCol = getNMMColor(g, progress, colorSet);
   strokeCol.setAlpha(200); 
-  
-  // 設定填色 (目前維持半透明白，後續想讓網格內部也有金屬感可以在這裡改)
-  let fillCol = g.color(255, 255, 255, g.random(10, 40));
 
   // 執行上色
   g.stroke(strokeCol);
   g.fill(fillCol);
+}
+
+/**
+ * 取得細胞的獨立填色
+ */
+function getVoronoiFillColor(g, progress, fillStyle, cellX, cellY) {
+  let c;
+  switch (fillStyle) {
+    case 0:
+      // 0: 珍珠與薄膜干涉 (稍微帶一點粉藍/粉紫色的半透明白)
+      c = g.color(240 + g.random(-10, 10), 245, 255, g.random(20, 60));
+      break;
+    case 1:
+      // 1: 生物能量呼吸感 (基部亮且不透明，翅尖暗且透明)
+      let bioAlpha = g.map(progress, 0, 1, 150, 10);
+      c = g.color(255, 255, 250, bioAlpha);
+      break;
+    case 2:
+      // 2: 仿舊有機質羊皮紙 (基部琥珀色，漸層到透明)
+      let amber = g.color("#d4a373");
+      let transparent = g.color(255, 255, 255, 0);
+      c = g.lerpColor(amber, transparent, progress * 1.5); // 提早變透明
+      break;
+    case 3:
+      // 3: 磨砂玻璃 (純黑白灰，加上極端亂數透明度)
+      c = g.color(255, 255, 255, g.random(5, 90));
+      break;
+  }
+  return c;
 }
