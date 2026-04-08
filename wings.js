@@ -299,9 +299,13 @@ function scatterJitteredGrid(g, wLength, wWidth, tipYOffset) {
 }
 
 function drawGradualStroke(g, outline, forceColorType, ColorSet) {
-  // 設定顏色與粗細的控制參數
   let colorType = forceColorType !== undefined ? forceColorType : g.floor(g.random(2));
-  let weightPivot = 0.95; // 線條最細（w2）的位置
+  
+  // --- 新增：用來記錄首尾資訊的變數 ---
+  let firstPoint = outline[0];
+  let lastPoint = outline[outline.length - 1];
+  let firstColor, lastColor;
+  let firstSW, lastSW;
 
   for (let i = 0; i < outline.length - 1; i++) {
     let p1 = outline[i];
@@ -309,30 +313,44 @@ function drawGradualStroke(g, outline, forceColorType, ColorSet) {
     let rawProgress = i / outline.length;
     let strokeCol;
 
-    switch (colorType) {
-      case 0:
-        strokeCol = getSimpleLerpColor(g, rawProgress, "#281E50", "#cae9f9");
-        break;
-      case 1:
-        strokeCol = getNMMColor(g, rawProgress, ColorSet);
-        break;
+    // 計算顏色
+    if (colorType === 0) {
+      strokeCol = getSimpleLerpColor(g, rawProgress, "#281E50", "#cae9f9");
+    } else {
+      strokeCol = getNMMColor(g, rawProgress, ColorSet);
     }
 
-    // --- 2. 粗細控制邏輯 ---
-    let wProgress;
-    if (rawProgress < weightPivot) {
-      wProgress = g.map(rawProgress, 0, weightPivot, 0, 1);
-    } else {
-      wProgress = g.map(rawProgress, weightPivot, 1, 1, 0);
-    }
-    // 這裡使用 wProgress 進行映射：0 (兩端) 為 3px，1 (Pivot) 為 0.7px
+    // 計算粗細 (維持你原本的 Pivot 邏輯)
+    let weightPivot = 0.95;
+    let wProgress = (rawProgress < weightPivot) ? 
+                    g.map(rawProgress, 0, weightPivot, 0, 1) : 
+                    g.map(rawProgress, weightPivot, 1, 1, 0);
     let sw = g.map(wProgress, 0, 1, 3, 0.7);
 
-    // --- 3. 繪製 ---
+    // --- 紀錄第一段與最後一段的資訊 ---
+    if (i === 0) {
+      firstColor = strokeCol;
+      firstSW = sw;
+    }
+    if (i === outline.length - 2) {
+      lastColor = strokeCol;
+      lastSW = sw;
+    }
+
+    // 執行繪製
     g.stroke(strokeCol);
     g.strokeWeight(sw);
     g.line(p1.x, p1.y, p2.x, p2.y);
   }
+
+  // === 最後一步：補上閉合段 ===
+  // 這裡計算 lastPoint 到 firstPoint 的中間色，確保過渡平滑
+  let bridgeColor = g.lerpColor(lastColor, firstColor, 0.5);
+  let bridgeSW = (lastSW + firstSW) / 2;
+
+  g.stroke(bridgeColor);
+  g.strokeWeight(bridgeSW);
+  g.line(lastPoint.x, lastPoint.y, firstPoint.x, firstPoint.y);
 }
 
 function getSimpleLerpColor(g, p, c1, c2) {
