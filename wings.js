@@ -13,7 +13,7 @@ function isPointInPolygon(px, py, poly) {
   return isInside;
 }
 
-function drawWing(g,seedValue){
+function drawWing(g,seedValue, forceColorType, ColorSet){
   if (seedValue !== undefined) {
     g.randomSeed(seedValue);
     g.noiseSeed(seedValue);
@@ -60,7 +60,7 @@ function drawWing(g,seedValue){
   g.drawingContext.restore(); 
 
   // 5. 補上最外層的深灰色清晰輪廓
-  drawGradualStroke(g, wingOutline);
+  drawGradualStroke(g, wingOutline, forceColorType, ColorSet);
 }
 
 /**
@@ -298,22 +298,23 @@ function scatterJitteredGrid(g, wLength, wWidth, tipYOffset) {
   return pts;
 }
 
-function drawGradualStroke(g, outline, forceColorType) {
+function drawGradualStroke(g, outline, forceColorType, ColorSet) {
   // 設定顏色與粗細的控制參數
-  let colorType = forceColorType !== undefined ? forceColorType : g.floor(g.random(1, 2));
+  let colorType = forceColorType !== undefined ? forceColorType : g.floor(g.random(2));
   let weightPivot = 0.95; // 線條最細（w2）的位置
 
   for (let i = 0; i < outline.length - 1; i++) {
     let p1 = outline[i];
     let p2 = outline[i + 1];
     let rawProgress = i / outline.length;
+    let strokeCol;
 
     switch (colorType) {
       case 0:
-        strokeCol = getSimpleLerpColor(g, rawProgress, "#281E50", "#64C8FF");
+        strokeCol = getSimpleLerpColor(g, rawProgress, "#281E50", "#96d9fd");
         break;
       case 1:
-        strokeCol = getNMMColor(g, rawProgress);
+        strokeCol = getNMMColor(g, rawProgress, ColorSet);
         break;
     }
 
@@ -332,13 +333,6 @@ function drawGradualStroke(g, outline, forceColorType) {
     g.strokeWeight(sw);
     g.line(p1.x, p1.y, p2.x, p2.y);
   }
-  
-  // 補上最後一個點到起點的連線，確保閉合
-  let pFirst = outline[0];
-  let pLast = outline[outline.length - 1];
-  g.stroke(g.color(40, 30, 80)); 
-  g.strokeWeight(3);
-  g.line(pLast.x, pLast.y, pFirst.x, pFirst.y);
 }
 
 function getSimpleLerpColor(g, p, c1, c2) {
@@ -355,15 +349,28 @@ function getSimpleLerpColor(g, p, c1, c2) {
  * @param {p5.Graphics} g 
  * @param {number} p 進度 (0~1)
  */
-function getNMMColor(g, p) {
+function getNMMColor(g, p, nmmColorSet) {
+  let baseColor;         // 陰影（極深色）
+  let midColor;       // 中間過渡色
+  let highlightColor; // 高光（純白）
+
   // 1. 設定金屬基調顏色
-  let baseColor = g.color("#14191e");         // 陰影（極深色）
-  let midColor = g.color("#646e82");       // 中間過渡色
-  let highlightColor = g.color("#ffffff"); // 高光（純白）
+  switch (nmmColorSet){
+    case 0:
+      baseColor = g.color("#222423");
+      midColor = g.color("#6D6F6E");
+      highlightColor = g.color("#C7C7C7");
+      break;
+    case 1:
+      baseColor = g.color("#6c5626");
+      midColor = g.color("#bd9b50");
+      highlightColor = g.color("#F2DFBA");
+      break;
+  }
 
   // 2. 使用柏林雜訊產生不規則的光感
   // 這裡的 10 是「雜訊頻率（縮放比例）」。數字越大，明暗變化越密集；數字越小，變化越平緩。
-  let noiseVal = g.noise(p * 50); 
+  let noiseVal = g.noise(p * 20); 
   
   // 3. 讓光感變銳利
   // 注意：g.noise() 回傳的範圍本來就是 0~1，所以這裡不需要像 sin 一樣用 g.map() 轉換。

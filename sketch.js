@@ -20,6 +20,8 @@ function draw() {
   let flapAngle = random(-PI / 4, PI / 4);
   let globalScale = random(0.8, 1.1);
   let hasSecondPair = floor(random(2));
+  let forceColorType = floor(random(2));
+  let ColorSet = floor(random(2));
 
   pg.push();
   pg.translate(centerX, centerY);
@@ -28,9 +30,9 @@ function draw() {
 
   // 傳遞 pg 進去，確保子函式也是畫在同一張「紙」上
   if (hasSecondPair == 1){
-    drawWingPair(pg, mySeed + 1, 10, flapAngle + PI/8, 0.65);
+    drawWingPair(pg, mySeed + 1, 10, flapAngle + PI/8, 0.65, forceColorType, ColorSet);
   }
-  drawWingPair(pg, mySeed, 0, flapAngle, 1.0);
+  drawWingPair(pg, mySeed, 0, flapAngle, 1.0, forceColorType, ColorSet);
 
   pg.pop();
 
@@ -43,7 +45,7 @@ function draw() {
 /**
  * 修改後的函式：新增第一個參數 g，代表要畫在哪個畫布上
  */
-function drawWingPair(g, seed, yOff, rot, s) {
+function drawWingPair(g, seed, yOff, rot, s, forceColorType, ColorSet) {
   let bodyHalfWidth = 5;
 
   // 右翅膀
@@ -51,7 +53,7 @@ function drawWingPair(g, seed, yOff, rot, s) {
   g.translate(bodyHalfWidth, yOff);
   g.rotate(rot);
   g.scale(s);
-  drawWing(g, seed);
+  drawWing(g, seed, forceColorType, ColorSet);
   g.pop();
 
   // 左翅膀 (鏡像)
@@ -59,7 +61,7 @@ function drawWingPair(g, seed, yOff, rot, s) {
   g.translate(-bodyHalfWidth, yOff);
   g.rotate(-rot);
   g.scale(-s, s); 
-  drawWing(g, seed);
+  drawWing(g, seed, forceColorType, ColorSet);
   g.pop();
 }
 
