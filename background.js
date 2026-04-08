@@ -3,7 +3,7 @@ function drawBackground(pg) {
   const palettes = [
     ["#d6b6a0", "#afb1b4"],
     ["#58676e", "#d2d7dc"],
-    ["#efe9a5", "#8290ac"],
+    ["#A6A279", "#8290ac"],
     ["#8f7783", "#d7b08a"],
     ["#283741", "#788ca0"]
   ];
@@ -19,7 +19,7 @@ function drawBackground(pg) {
   };
 
   let backgroundType = floor(random(4)); 
-  //let backgroundType = 3; 
+  //let backgroundType = 1; 
   
   // 將處理好的 currentPalette 傳給各個背景函式
   switch (backgroundType) {
@@ -36,6 +36,7 @@ function drawBackground(pg) {
       diagonalWind(pg, currentPalette);
       break;
   }
+  drawSpanningRects(pg);
 }
 
 // ---------------------------------------------------------
@@ -190,7 +191,43 @@ function diagonalWind(pg, palette) {
   pg.pop();
 }
 
-// applyNoise 函數維持不變即可
+// ---------------------------------------------------------
+// 新增：繪製細長貫穿矩形
+// ---------------------------------------------------------
+function drawSpanningRects(pg) {
+  pg.push();
+  pg.noStroke(); // 矩形不需要邊框
+  
+  // 隨機決定數量 (0 到 3 條)
+  let numRects = floor(random(0, 4)); 
+  
+  for (let i = 0; i < numRects; i++) {
+    // 另外隨機決定顏色
+    let grayValue = random(255); 
+    let alphaValue = random(120, 200); // 保持半透明，讓底色透上來
+    
+    // 填入 (灰階, 透明度)
+    pg.fill(grayValue, alphaValue);
+    
+    // 決定要垂直還是水平 (各 50% 機率)
+    let isVertical = random([true, false]);
+    
+    // 讓粗細有隨機變化，但也配合畫布比例 (限制在 2px 到 畫布寬度的 1.5% 之間)
+    let thickness = random(2, pg.width * 0.07); 
+    
+    if (isVertical) {
+      // 垂直矩形：x 座標隨機，y 從 0 開始，寬度為 thickness，高度貫穿畫布
+      let px = random(pg.width);
+      pg.rect(px, 0, thickness, pg.height);
+    } else {
+      // 水平矩形：x 從 0 開始，y 座標隨機，寬度貫穿畫布，高度為 thickness
+      let py = random(pg.height);
+      pg.rect(0, py, pg.width, thickness);
+    }
+  }
+  
+  pg.pop();
+}
 
 // noise 函數維持不變
 function applyNoise(noiseStrength) {
