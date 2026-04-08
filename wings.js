@@ -311,7 +311,7 @@ function drawGradualStroke(g, outline, forceColorType, ColorSet) {
 
     switch (colorType) {
       case 0:
-        strokeCol = getSimpleLerpColor(g, rawProgress, "#281E50", "#96d9fd");
+        strokeCol = getSimpleLerpColor(g, rawProgress, "#281E50", "#cae9f9");
         break;
       case 1:
         strokeCol = getNMMColor(g, rawProgress, ColorSet);
@@ -325,8 +325,8 @@ function drawGradualStroke(g, outline, forceColorType, ColorSet) {
     } else {
       wProgress = g.map(rawProgress, weightPivot, 1, 1, 0);
     }
-    // 這裡使用 wProgress 進行映射：0 (兩端) 為 3px，1 (Pivot) 為 0.5px
-    let sw = g.map(wProgress, 0, 1, 3, 0.5);
+    // 這裡使用 wProgress 進行映射：0 (兩端) 為 3px，1 (Pivot) 為 0.7px
+    let sw = g.map(wProgress, 0, 1, 3, 0.7);
 
     // --- 3. 繪製 ---
     g.stroke(strokeCol);
@@ -345,14 +345,15 @@ function getSimpleLerpColor(g, p, c1, c2) {
 }
 
 /**
- * NMM 模擬顏色邏輯：使用柏林雜訊 (Perlin Noise) 模擬不規則金屬反光
+ * NMM 模擬顏色邏輯：將極致高光「扣」在原本高光的中間
  * @param {p5.Graphics} g 
  * @param {number} p 進度 (0~1)
  */
 function getNMMColor(g, p, nmmColorSet) {
-  let baseColor;         // 陰影（極深色）
+  let baseColor;      // 陰影（極深色）
   let midColor;       // 中間過渡色
-  let highlightColor; // 高光（純白）
+  let highlightColor; // 基礎高光
+  let peakHighlight = g.color("#FFFFFF"); // 極致高光（純白），準備扣在中間
 
   // 1. 設定金屬基調顏色
   switch (nmmColorSet){
@@ -368,22 +369,31 @@ function getNMMColor(g, p, nmmColorSet) {
       break;
   }
 
-  // 2. 使用柏林雜訊產生不規則的光感
-  // 這裡的 10 是「雜訊頻率（縮放比例）」。數字越大，明暗變化越密集；數字越小，變化越平緩。
+  // 2. 使用柏林雜訊產生不規則的光感 (維持原本邏輯)
   let noiseVal = g.noise(p * 20); 
   
-  // 3. 讓光感變銳利
-  // 注意：g.noise() 回傳的範圍本來就是 0~1，所以這裡不需要像 sin 一樣用 g.map() 轉換。
-  let shineFactor = g.pow(noiseVal, 2); // 5次方讓高光範圍縮小且過渡更硬
+  // 3. 讓光感變銳利 (維持原本 2 次方)
+  let shineFactor = g.pow(noiseVal, 2);
 
-  // 4. 混合顏色
+  // 4. 混合顏色 (修改這裡的邏輯)
   let finalC;
-  if (shineFactor < 0.5) {
-    // 陰影到中間色
+
+  // 設定一個門檻，只有當 shineFactor 超過這個值，才開始推向純白
+  // 這個值越接近 1，極致高光的範圍就越小，越集中在中心。
+  let peakThreshold = 0.85; 
+
+  if (shineFactor < 0.3) {
+    // [區間 1] 陰影到中間色 (維持原樣)
     finalC = g.lerpColor(baseColor, midColor, shineFactor * 2);
+  } else if (shineFactor < peakThreshold) {
+    // [區間 2] 中間色到基礎高光
+    let normalizedFactor = g.map(shineFactor, 0.3, peakThreshold, 0, 1);
+    finalC = g.lerpColor(midColor, highlightColor, normalizedFactor);
   } else {
-    // 中間色到極致高光
-    finalC = g.lerpColor(midColor, highlightColor, (shineFactor - 0.5) * 2);
+    // [區間 3] 基礎高光到極致高光
+    // 這就是「扣在中間」的效果
+    let normalizedFactor = g.map(shineFactor, peakThreshold, 1.0, 0, 1);
+    finalC = g.lerpColor(highlightColor, peakHighlight, normalizedFactor);
   }
 
   return finalC;
