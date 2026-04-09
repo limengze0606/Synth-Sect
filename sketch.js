@@ -1,9 +1,9 @@
 let pg; // 宣告離屏畫布變數
 
 function setup() {
-  createCanvas(600, 600);
+  createCanvas(600, 600, SVG);
   // 1. 建立一個和畫布一樣大的 PGraphics
-  pg = createGraphics(600, 600);
+  pg = createGraphics(600, 600, SVG);
   noLoop();
 }
 
@@ -11,7 +11,7 @@ function draw() {
   // 所有的繪製邏輯現在都發生在 pg 上
   pg.background(240, 240, 235);
 
-  drawBackground(pg);
+  // drawBackground(pg);
   
   let mySeed = floor(random(100000));
   let centerX = pg.width * 0.5 + random(-30, 30);
@@ -26,7 +26,7 @@ function draw() {
   pg.scale(globalScale);
 
   // 傳遞 pg 進去，確保子函式也是畫在同一張「紙」上
-  drawWingPair(pg, mySeed + 1, 10, flapAngle + PI/6, 0.85);
+  //drawWingPair(pg, mySeed + 1, 10, flapAngle + PI/6, 0.85);
   drawWingPair(pg, mySeed, 0, flapAngle, 1.0);
 
   pg.pop();
@@ -62,4 +62,12 @@ function drawWingPair(g, seed, yOff, rot, s) {
 
 function mousePressed() {
   redraw();
+}
+
+function keyPressed() {
+  // 當按下鍵盤上的 's' 或 'S' 時執行儲存
+  if (key === 's' || key === 'S') {
+    save("wings.svg");
+    print("檔案已儲存為 SVG！");
+  }
 }
