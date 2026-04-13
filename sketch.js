@@ -1,12 +1,43 @@
 let pg; 
+let rotX = 0;
+let rotY = 0;
+let zoom = 500;
 
 function setup() {
-  createCanvas(600, 600);
+  createCanvas(600, 600, WEBGL);
   pg = createGraphics(600, 600);
-  noLoop();
+  drawCard();
+  //noLoop();
 }
 
 function draw() {
+  background(220);
+
+  // 1. 只有在滑鼠按住時才更新旋轉角度
+  if (mouseIsPressed) {
+    // 左右滑動滑鼠 (movedX) 改變繞 Y 軸的旋轉
+    rotY += movedX * 0.01;
+    // 上下滑動滑鼠 (movedY) 改變繞 X 軸的旋轉
+    rotX -= movedY * 0.01;
+  }
+
+  // 2. 限制旋轉範圍 (例如：上下旋轉不超過 90 度，避免翻轉過頭)
+  rotX = constrain(rotX, -HALF_PI, HALF_PI);
+  // 如果你想限制左右旋轉範圍，也可以對 rotY 做 constrain
+  // rotY = constrain(rotY, -QUARTER_PI, QUARTER_PI);
+
+  // 3. 設定攝影機與變換
+  // 我們將 zoom 應用在 Z 軸位移上
+  translate(0, 0, zoom); 
+  
+  rotateX(rotX);
+  rotateY(rotY);
+
+  texture(pg);
+  plane(600, 600);
+}
+
+function drawCard() {
   pg.background(240, 240, 235);
   drawBackground(pg);
   
@@ -81,5 +112,16 @@ function drawWingPair(g, seed, yOff, rot, s, forceColorType, ColorSet, fillStyle
 }
 
 function mousePressed() {
-  redraw();
+  drawCard();
+}
+
+// 監聽滾輪來改變 zoom 值
+function mouseWheel(event) {
+  // event.delta 在不同瀏覽器可能正負相反，通常向下滾是正值
+  zoom -= event.delta; 
+  // 限制縮放，防止穿過平面或飛太遠
+  zoom = constrain(zoom, -1000, 400);
+  
+  // 回傳 false 避免捲動網頁
+  return false; 
 }
