@@ -12,6 +12,8 @@ function setup() {
 
 function draw() {
   background(220);
+  push();
+  translate(0, 0, -1000);
 
   // 1. 只有在滑鼠按住時才更新旋轉角度
   if (mouseIsPressed) {
@@ -22,9 +24,9 @@ function draw() {
   }
 
   // 2. 限制旋轉範圍 (例如：上下旋轉不超過 90 度，避免翻轉過頭)
-  rotX = constrain(rotX, -HALF_PI, HALF_PI);
+  rotX = constrain(rotX, -QUARTER_PI, QUARTER_PI);
   // 如果你想限制左右旋轉範圍，也可以對 rotY 做 constrain
-  // rotY = constrain(rotY, -QUARTER_PI, QUARTER_PI);
+  rotY = constrain(rotY, -QUARTER_PI, QUARTER_PI);
 
   // 3. 設定攝影機與變換
   // 我們將 zoom 應用在 Z 軸位移上
@@ -35,6 +37,7 @@ function draw() {
 
   texture(pg);
   plane(600, 600);
+  pop();
 }
 
 function drawCard() {
