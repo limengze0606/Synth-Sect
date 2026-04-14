@@ -19,10 +19,7 @@ function drawWing(g,seedValue, forceColorType, ColorSet, fillStyle){
     g.noiseSeed(seedValue);
   }
 
-  // let wLength = random(250, 450);
-  // let wWidth = random(80, 250);
-  // let tipYOffset = random(-80, 100);
-  let wLength = g.random(g.width * 0.25, g.height * 0.5);
+  let wLength = g.random(g.width * 0.25, g.width * 0.5);
   let wWidth = g.random(g.width * 0.13, g.height * 0.5);
   let tipYOffset = g.random(-g.width * 0.13, g.height * 0.15);
   let noiseStrength = g.random(2, 10);

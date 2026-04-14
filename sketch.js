@@ -2,11 +2,15 @@ let pg;
 let rotX = 0;
 let rotY = 0;
 let zoom = 500;
+let cardWidth = 500;
+let cardHeight = 720;
+let pictureWidth = 500;
+let pictureHeight = 700;
 
 function setup() {
-  createCanvas(600, 600, WEBGL);
-  pg = createGraphics(600, 600);
-  drawCard();
+  createCanvas(windowWidth, windowHeight, WEBGL);
+  pg = createGraphics(cardWidth, cardHeight);
+  drawPicture();
   //noLoop();
 }
 
@@ -36,11 +40,11 @@ function draw() {
   rotateY(rotY);
 
   texture(pg);
-  rect(-250, -350, 500, 700, 30);
+  rect(-cardWidth/2, -cardHeight/2, cardWidth, cardHeight, cardWidth * 0.05); // 加入圓角
   pop();
 }
 
-function drawCard() {
+function drawPicture() {
   pg.background(240, 240, 235);
   drawBackground(pg);
   
@@ -130,8 +134,8 @@ function mouseWheel(event) {
 }
 
 function keyPressed() {
-  // 當按下鍵盤上的 'r' 或 'R' 時執行 drawCard() 函式，重新生成卡片
+  // 當按下鍵盤上的 'r' 或 'R' 時執行 drawPicture() 函式，重新生成圖片
   if (key === 'r' || key === 'R') {
-    drawCard();
+    drawPicture();
   }
 }
