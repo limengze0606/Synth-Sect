@@ -229,18 +229,20 @@ function drawSpanningRects(pg) {
   pg.pop();
 }
 
-// noise 函數維持不變
-function applyNoise(noiseStrength) {
-  pg.loadPixels();
-  let d = pixelDensity();
-  let fullSize = 4 * (pg.width * d) * (pg.height * d);
+// 加入 targetPg 參數，讓它可以針對特定畫布處理
+function applyNoise(targetPg, noiseStrength) {
+  targetPg.loadPixels();
+  
+  // 針對傳進來的畫布計算像素陣列大小
+  let d = targetPg.pixelDensity(); 
+  let fullSize = 4 * (targetPg.width * d) * (targetPg.height * d);
   
   for (let i = 0; i < fullSize; i += 4) {
     let noiseValue = random(-noiseStrength * 255, noiseStrength * 255);
     
-    pg.pixels[i] = constrain(pg.pixels[i] + noiseValue, 0, 255);     
-    pg.pixels[i + 1] = constrain(pg.pixels[i + 1] + noiseValue, 0, 255); 
-    pg.pixels[i + 2] = constrain(pg.pixels[i + 2] + noiseValue, 0, 255); 
+    targetPg.pixels[i] = constrain(targetPg.pixels[i] + noiseValue, 0, 255);     
+    targetPg.pixels[i + 1] = constrain(targetPg.pixels[i + 1] + noiseValue, 0, 255); 
+    targetPg.pixels[i + 2] = constrain(targetPg.pixels[i + 2] + noiseValue, 0, 255); 
   }
-  pg.updatePixels();
+  targetPg.updatePixels();
 }

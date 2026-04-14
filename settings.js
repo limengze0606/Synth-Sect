@@ -1,11 +1,11 @@
 // 定義稀有度和對應的圖片尺寸
 const Rarity = {
     Normal: {
-        pictureWidth: 300,
-        pictureHeight: 200,
+        pictureWidth: 400,
+        pictureHeight: 300,
     },
     FullArt: {
-        pictureWidth: cardWidth, // 使用全卡面寬度
-        pictureHeight: cardHeight, // 使用全卡面高度
+        pictureWidth: 500,
+        pictureHeight: 700,
     }
 };
