@@ -36,7 +36,7 @@ function draw() {
   rotateY(rotY);
 
   texture(pg);
-  plane(600, 600);
+  rect(-250, -350, 500, 700, 30);
   pop();
 }
 
