@@ -114,9 +114,9 @@ function drawWingPair(g, seed, yOff, rot, s, forceColorType, ColorSet, fillStyle
   g.pop();
 }
 
-function mousePressed() {
-  drawCard();
-}
+//function mousePressed() {
+//  drawCard();
+//}
 
 // 監聽滾輪來改變 zoom 值
 function mouseWheel(event) {
@@ -127,4 +127,11 @@ function mouseWheel(event) {
   
   // 回傳 false 避免捲動網頁
   return false; 
+}
+
+function keyPressed() {
+  // 當按下鍵盤上的 'r' 或 'R' 時執行 drawCard() 函式，重新生成卡片
+  if (key === 'r' || key === 'R') {
+    drawCard();
+  }
 }
