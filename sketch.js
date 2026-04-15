@@ -1,5 +1,6 @@
 let pg; 
-let picPg; // 【新增】專門用來繪製卡面圖片的畫布
+let picPg; // 卡面圖片的畫布
+let maskPg; // 遮罩的畫布
 let currentRarity = 'Normal'; // 預設稀有度為普通卡
 let rotX = 0;
 let rotY = 0;
@@ -66,6 +67,7 @@ function draw() {
 
   texture(pg);
   rect(-cardWidth/2, -cardHeight/2, cardWidth, cardHeight, cardWidth * 0.05); // 加入圓角
+  image(maskPg, 300, 0); // 顯示遮罩畫布以供調試
   pop();
 }
 
@@ -118,14 +120,19 @@ function drawCard() {
 
 // 【修正 2】加上參數 px, py 來接收座標
 function drawPicture(px, py) {
-  // === 處理圖框畫布 (picPg) ===
+  // === 同步處理 picPg 與 maskPg 的尺寸與初始化 ===
   if (!picPg || picPg.width !== pictureWidth || picPg.height !== pictureHeight) {
     if (picPg) picPg.remove();
+    if (maskPg) maskPg.remove(); // 確保舊的遮罩也移除
     picPg = createGraphics(pictureWidth, pictureHeight);
+    maskPg = createGraphics(pictureWidth, pictureHeight); // 實例化遮罩畫布
   }
 
   picPg.background(240, 240, 235);
-  drawBackground(picPg);
+  maskPg.background(0); // 每次重畫時，遮罩畫布必須塗黑清空
+  
+  // 假設 drawBackground 存在於其他檔案
+  if(typeof drawBackground === 'function') drawBackground(picPg);
   
   let mySeed = floor(random(100000));
   let fillStyle = floor(random(4));
@@ -140,21 +147,21 @@ function drawPicture(px, py) {
   let flapAngle = isRandomMode ? random(-PI / 4, PI / 4) : 0;
   let globalScale = isRandomMode ? random(0.8, 1.1) : 1.0;
 
-  picPg.push();
-  picPg.translate(centerX, centerY);
-  picPg.rotate(bodyRotation);
-  picPg.scale(globalScale);
+  // === 關鍵：主畫布與遮罩畫布必須同步變換 ===
+  picPg.push(); maskPg.push();
+  
+  picPg.translate(centerX, centerY); maskPg.translate(centerX, centerY);
+  picPg.rotate(bodyRotation);        maskPg.rotate(bodyRotation);
+  picPg.scale(globalScale);          maskPg.scale(globalScale);
 
   if (hasSecondPair == 1){
-    drawWingPair(picPg, mySeed + 1, 10, flapAngle + PI/8, 0.65, forceColorType, ColorSet, fillStyle);
+    drawWingPair(picPg, maskPg, mySeed + 1, 10, flapAngle + PI/8, 0.65, forceColorType, ColorSet, fillStyle);
   }
-  drawWingPair(picPg, mySeed, 0, flapAngle, 1.0, forceColorType, ColorSet, fillStyle);
+  drawWingPair(picPg, maskPg, mySeed, 0, flapAngle, 1.0, forceColorType, ColorSet, fillStyle);
 
-  picPg.pop();
+  picPg.pop(); maskPg.pop();
 
-  // === 套用雜訊並將圖片貼上卡片 ===
-  applyNoise(picPg, 0.1);
-  // 【修正 2】使用傳進來的 px, py 來畫圖
+  if(typeof applyNoise === 'function') applyNoise(picPg, 0.1);
   pg.image(picPg, px, py);
 }
 
@@ -218,24 +225,24 @@ function drawCardFrame(targetPg, rarity, px, py, pw, ph) {
 /**
  * 修改後的函式：新增第一個參數 g，代表要畫在哪個畫布上
  */
-function drawWingPair(g, seed, yOff, rot, s, forceColorType, ColorSet, fillStyle) {
+function drawWingPair(g, maskPg, seed, yOff, rot, s, forceColorType, ColorSet, fillStyle) {
   let bodyHalfWidth = 5;
 
-  // 右翅膀
-  g.push();
-  g.translate(bodyHalfWidth, yOff);
-  g.rotate(rot);
-  g.scale(s);
-  drawWing(g, seed, forceColorType, ColorSet, fillStyle);
-  g.pop();
+  // 右翅膀 (同步變換)
+  g.push(); maskPg.push();
+  g.translate(bodyHalfWidth, yOff); maskPg.translate(bodyHalfWidth, yOff);
+  g.rotate(rot);                    maskPg.rotate(rot);
+  g.scale(s);                       maskPg.scale(s);
+  drawWing(g, maskPg, seed, forceColorType, ColorSet, fillStyle);
+  g.pop(); maskPg.pop();
 
-  // 左翅膀 (鏡像)
-  g.push();
-  g.translate(-bodyHalfWidth, yOff);
-  g.rotate(-rot);
-  g.scale(-s, s); 
-  drawWing(g, seed, forceColorType, ColorSet, fillStyle);
-  g.pop();
+  // 左翅膀 (鏡像，同步變換)
+  g.push(); maskPg.push();
+  g.translate(-bodyHalfWidth, yOff); maskPg.translate(-bodyHalfWidth, yOff);
+  g.rotate(-rot);                    maskPg.rotate(-rot);
+  g.scale(-s, s);                    maskPg.scale(-s, s); 
+  drawWing(g, maskPg, seed, forceColorType, ColorSet, fillStyle);
+  g.pop(); maskPg.pop();
 }
 
 //function mousePressed() {
