@@ -1,6 +1,7 @@
 let pg; 
 let picPg; // 卡面圖片的畫布
 let maskPg; // 遮罩的畫布
+let maskMap; // 儲存遮罩圖像的像素資料
 let currentRarity = 'Normal'; // 預設稀有度為普通卡
 let rotX = 0;
 let rotY = 0;
@@ -37,6 +38,7 @@ function setup() {
   pg = createGraphics(cardWidth, cardHeight);
   // 【新增】初始化圖片畫布
   picPg = createGraphics(pictureWidth, pictureHeight); 
+  maskMap = createGraphics(cardWidth, cardHeight);
   drawCard();
 }
 
@@ -67,7 +69,7 @@ function draw() {
 
   texture(pg);
   rect(-cardWidth/2, -cardHeight/2, cardWidth, cardHeight, cardWidth * 0.05); // 加入圓角
-  image(maskPg, 300, 0); // 顯示遮罩畫布以供調試
+  image(maskMap, 300, 0); // 顯示遮罩畫布以供調試
   pop();
 }
 
@@ -130,6 +132,7 @@ function drawPicture(px, py) {
 
   picPg.background(240, 240, 235);
   maskPg.background(0); // 每次重畫時，遮罩畫布必須塗黑清空
+  maskMap.background(0); // 同步清空 maskMap
   
   // 假設 drawBackground 存在於其他檔案
   if(typeof drawBackground === 'function') drawBackground(picPg);
@@ -163,6 +166,7 @@ function drawPicture(px, py) {
 
   if(typeof applyNoise === 'function') applyNoise(picPg, 0.1);
   pg.image(picPg, px, py);
+  maskMap.image(maskPg, px, py);
 }
 
 /**
