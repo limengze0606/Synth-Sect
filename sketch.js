@@ -48,36 +48,35 @@ function draw() {
 }
 
 function drawPicture() {
-  // === 【新增】抽卡機率設定 ===
-  // random() 會產生一個 0.0 到 1.0 之間的小數
-  // 這裡設定 0.2 代表有 20% 的機率抽中全圖卡，80% 機率是普通卡
+  // 1. === 抽卡機制 ===
   let gachaRoll = random(); 
-  
   if (gachaRoll < 0.2) { 
-    // 20% 中獎：全圖卡
+    currentRarity = 'FullArt';
     pictureWidth = Rarity.FullArt.pictureWidth;
     pictureHeight = Rarity.FullArt.pictureHeight;
-    currentRarity = 'FullArt';
   } else {
-    // 80% 槓龜：普通卡
+    currentRarity = 'Normal';
     pictureWidth = Rarity.Normal.pictureWidth;
     pictureHeight = Rarity.Normal.pictureHeight;
-    currentRarity = 'Normal';
   }
-  // ==========================
 
-  // 【新增】檢查 picPg 的尺寸是否需要更新 (為了支援 settings.js 切換 Rarity 時動態改變大小)
+  // 2. === 計算圖片位置 (提早計算) ===
+  let picX = (cardWidth - pictureWidth) / 2;
+  let picY = (currentRarity === 'FullArt') 
+             ? (cardHeight - pictureHeight) / 2 
+             : (cardHeight - pictureHeight) / 2 - 150; 
+
+  // 3. === 繪製卡片底板與裝飾 (呼叫獨立函式) ===
+  drawCardFrame(pg, currentRarity, picX, picY, pictureWidth, pictureHeight);
+
+  // 4. === 處理圖框畫布 (picPg) ===
   if (!picPg || picPg.width !== pictureWidth || picPg.height !== pictureHeight) {
     if (picPg) picPg.remove();
     picPg = createGraphics(pictureWidth, pictureHeight);
   }
 
-  // 1. 先為整張卡片 (pg) 畫上底板顏色 (例如卡片白邊/黑邊)
-  pg.background(255); // 卡底色，可依喜好更改
-
-  // 2. 開始在圖框畫布 (picPg) 上繪製
   picPg.background(240, 240, 235);
-  drawBackground(picPg); // 傳入 picPg，背景會自動適應 pictureWidth/Height
+  drawBackground(picPg);
   
   let mySeed = floor(random(100000));
   let fillStyle = floor(random(4));
@@ -86,30 +85,17 @@ function drawPicture() {
   let ColorSet = floor(random(2));
   let isRandomMode = floor(random(2));
 
-  let centerX, centerY, bodyRotation, flapAngle, globalScale;
-
-  if (isRandomMode) {
-    // 【修改】將 pg.width / pg.height 改為 picPg.width / picPg.height
-    centerX = picPg.width * 0.5 + random(-30, 30);
-    centerY = picPg.height * 0.5 + random(-30, 30);
-    bodyRotation = random(-PI / 12, PI / 12);
-    flapAngle = random(-PI / 4, PI / 4);
-    globalScale = random(0.8, 1.1);
-  } else {
-    // 【修改】同樣將 pg 改為 picPg
-    centerX = picPg.width * 0.5;
-    centerY = picPg.height * 0.5;
-    bodyRotation = 0;   
-    flapAngle = 0;      
-    globalScale = 1.0;  
-  }
+  let centerX = isRandomMode ? picPg.width * 0.5 + random(-30, 30) : picPg.width * 0.5;
+  let centerY = isRandomMode ? picPg.height * 0.5 + random(-30, 30) : picPg.height * 0.5;
+  let bodyRotation = isRandomMode ? random(-PI / 12, PI / 12) : 0;
+  let flapAngle = isRandomMode ? random(-PI / 4, PI / 4) : 0;
+  let globalScale = isRandomMode ? random(0.8, 1.1) : 1.0;
 
   picPg.push();
   picPg.translate(centerX, centerY);
   picPg.rotate(bodyRotation);
   picPg.scale(globalScale);
 
-  // 【修改】把畫布參數從 pg 改成 picPg
   if (hasSecondPair == 1){
     drawWingPair(picPg, mySeed + 1, 10, flapAngle + PI/8, 0.65, forceColorType, ColorSet, fillStyle);
   }
@@ -117,25 +103,64 @@ function drawPicture() {
 
   picPg.pop();
 
+  // 5. === 套用雜訊並將圖片貼上卡片 ===
   applyNoise(picPg, 0.1);
-
-  // 先在外面宣告變數
-  let picX, picY;
-
-  if (currentRarity === 'FullArt') {
-    // 裡面只做賦值 (不要加 let)
-    picX = (cardWidth - pictureWidth) / 2;
-    picY = (cardHeight - pictureHeight) / 2; 
-  } 
-  else {
-    // 裡面只做賦值 (不要加 let)
-    picX = (cardWidth - pictureWidth) / 2;
-    // 註: 如果你要讓普通卡圖片往上移，應該是減 50；如果要往下移，應該是加 50 喔！
-    picY = (cardHeight - pictureHeight) / 2 - 150; 
-  }
-  
-  // 現在這裡就能順利抓到 picX 和 picY 的值了
   pg.image(picPg, picX, picY);
+}
+
+/**
+ * 專門繪製卡片底圖、外框、裝飾與文字框的模組
+ * @param {p5.Graphics} targetPg - 目標畫布 (整張卡片 pg)
+ * @param {string} rarity - 稀有度
+ * @param {number} px - 圖片的 X 座標
+ * @param {number} py - 圖片的 Y 座標
+ * @param {number} pw - 圖片的寬度
+ * @param {number} ph - 圖片的高度
+ */
+function drawCardFrame(targetPg, rarity, px, py, pw, ph) {
+  // 1. 從 settings.js 取得一組隨機卡片配色
+  let palette = random(cardBackgroundPalettes);
+  let mainColor = targetPg.color(palette[0]);
+  let darkColor = targetPg.color(palette[1]);
+
+  // 2. 塗滿卡片底色
+  targetPg.background(mainColor);
+
+  targetPg.push();
+  
+  if (rarity === 'Normal') {
+    // --- A. 繪製圖片的陰影 (讓圖片有浮出來的立體感) ---
+    targetPg.fill(darkColor);
+    targetPg.noStroke();
+    targetPg.rect(px + 8, py + 8, pw, ph); // 往右下角偏移 8px
+
+    // --- B. 繪製卡片的內邊框裝飾 ---
+    targetPg.stroke(darkColor);
+    targetPg.strokeWeight(4);
+    targetPg.noFill();
+    targetPg.rect(15, 15, targetPg.width - 30, targetPg.height - 30, 8); // 帶有一點圓角的框
+
+    // --- C. 繪製下方的文字說明區塊底板 ---
+    // 計算文字框的位置：放在圖片下方，並留一點間距
+    let textY = py + ph + 25; 
+    let textH = targetPg.height - textY - 25; // 自動延展到卡片底部留白處
+    
+    // 給文字框一個半透明的淺色背景
+    targetPg.fill(255, 255, 255, 180); 
+    targetPg.strokeWeight(2);
+    targetPg.rect(px, textY, pw, textH, 5); 
+
+    // 未來如果要畫文字，就可以在這裡呼叫 drawCardText(...)
+  } 
+  else if (rarity === 'FullArt') {
+    // 全圖卡通常不需要複雜的外框，但可以加個很細的描邊收尾
+    targetPg.stroke(darkColor);
+    targetPg.strokeWeight(8);
+    targetPg.noFill();
+    targetPg.rect(0, 0, targetPg.width, targetPg.height);
+  }
+
+  targetPg.pop();
 }
 
 /**
