@@ -74,16 +74,23 @@ function draw() {
   rotateX(rotX);
   rotateY(rotY);
 
-  // 啟動你的自訂 Shader
-  shader(myShader);
-  
-  // 把這三張圖傳進 Shader 裡
-  myShader.setUniform('u_baseMap', pg);
-  myShader.setUniform('u_maskMap', maskMap);
-  myShader.setUniform('u_matcapMap', matcapImg);
+  switch (currentRarity) {
+    case 'Normal': {
+      texture(pg);
+      break;
+    }
+    case 'Rare':
+    case 'FullArt': {
+      shader(myShader);
+      myShader.setUniform('u_baseMap', pg);
+      myShader.setUniform('u_maskMap', maskMap);
+      myShader.setUniform('u_matcapMap', matcapImg);
+      break;
+    }
+  }
   
   rect(-cardWidth/2, -cardHeight/2, cardWidth, cardHeight, cardWidth * 0.05); // 加入圓角
-  image(maskMap, 300, 0); // 顯示遮罩畫布以供調試
+  //image(maskMap, 300, 0); // 顯示遮罩畫布以供調試
   pop();
 }
 
