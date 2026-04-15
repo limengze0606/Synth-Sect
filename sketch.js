@@ -14,7 +14,7 @@ function setup() {
   pg = createGraphics(cardWidth, cardHeight);
   // 【新增】初始化圖片畫布
   picPg = createGraphics(pictureWidth, pictureHeight); 
-  drawPicture();
+  drawCard();
 }
 
 function draw() {
@@ -47,7 +47,7 @@ function draw() {
   pop();
 }
 
-function drawPicture() {
+function drawCard() {
   // 1. === 抽卡機制 ===
   let gachaRoll = random(); 
   if (gachaRoll < 0.2) { 
@@ -60,16 +60,31 @@ function drawPicture() {
     pictureHeight = Rarity.Normal.pictureHeight;
   }
 
-  // 2. === 計算圖片位置 (提早計算) ===
+  // 2. === 計算圖片位置 ===
   let picX = (cardWidth - pictureWidth) / 2;
   let picY = (currentRarity === 'FullArt') 
              ? (cardHeight - pictureHeight) / 2 
              : (cardHeight - pictureHeight) / 2 - 150; 
+  
+  // 【修正 1】變數改成 currentRarity
+  switch (currentRarity) {
+    case 'Normal': {
+      drawCardFrame(pg, currentRarity, picX, picY, pictureWidth, pictureHeight);
+      // 【修正 2】將算好的 picX, picY 傳入 drawPicture
+      drawPicture(picX, picY); 
+      break;
+    }
+    case 'FullArt': {
+      drawPicture(picX, picY);
+      drawCardFrame(pg, currentRarity, picX, picY, pictureWidth, pictureHeight);
+      break;
+    }
+  }
+}
 
-  // 3. === 繪製卡片底板與裝飾 (呼叫獨立函式) ===
-  drawCardFrame(pg, currentRarity, picX, picY, pictureWidth, pictureHeight);
-
-  // 4. === 處理圖框畫布 (picPg) ===
+// 【修正 2】加上參數 px, py 來接收座標
+function drawPicture(px, py) {
+  // === 處理圖框畫布 (picPg) ===
   if (!picPg || picPg.width !== pictureWidth || picPg.height !== pictureHeight) {
     if (picPg) picPg.remove();
     picPg = createGraphics(pictureWidth, pictureHeight);
@@ -103,9 +118,10 @@ function drawPicture() {
 
   picPg.pop();
 
-  // 5. === 套用雜訊並將圖片貼上卡片 ===
+  // === 套用雜訊並將圖片貼上卡片 ===
   applyNoise(picPg, 0.1);
-  pg.image(picPg, picX, picY);
+  // 【修正 2】使用傳進來的 px, py 來畫圖
+  pg.image(picPg, px, py);
 }
 
 /**
@@ -118,46 +134,47 @@ function drawPicture() {
  * @param {number} ph - 圖片的高度
  */
 function drawCardFrame(targetPg, rarity, px, py, pw, ph) {
-  // 1. 從 settings.js 取得一組隨機卡片配色
+  // 從 settings.js 取得一組隨機卡片配色
   let palette = random(cardBackgroundPalettes);
   let mainColor = targetPg.color(palette[0]);
   let darkColor = targetPg.color(palette[1]);
 
-  // 2. 塗滿卡片底色
-  targetPg.background(mainColor);
-
   targetPg.push();
   
-  if (rarity === 'Normal') {
-    // --- A. 繪製圖片的陰影 (讓圖片有浮出來的立體感) ---
-    targetPg.fill(darkColor);
-    targetPg.noStroke();
-    targetPg.rect(px + 8, py + 8, pw, ph); // 往右下角偏移 8px
+  switch (rarity) {
+    case 'Normal': {
+      // 【修正 3】把塗滿底色的動作移到這裡，避免全圖卡被蓋掉
+      targetPg.background(mainColor);
 
-    // --- B. 繪製卡片的內邊框裝飾 ---
-    targetPg.stroke(darkColor);
-    targetPg.strokeWeight(4);
-    targetPg.noFill();
-    targetPg.rect(15, 15, targetPg.width - 30, targetPg.height - 30, 8); // 帶有一點圓角的框
+      // --- A. 繪製圖片的外框 ---
+      targetPg.fill(darkColor);
+      targetPg.noStroke();
+      targetPg.rect(px - 8, py - 8, pw + 16, ph + 16);
 
-    // --- C. 繪製下方的文字說明區塊底板 ---
-    // 計算文字框的位置：放在圖片下方，並留一點間距
-    let textY = py + ph + 25; 
-    let textH = targetPg.height - textY - 25; // 自動延展到卡片底部留白處
-    
-    // 給文字框一個半透明的淺色背景
-    targetPg.fill(255, 255, 255, 180); 
-    targetPg.strokeWeight(2);
-    targetPg.rect(px, textY, pw, textH, 5); 
+      // --- B. 繪製卡片的內邊框裝飾 ---
+      targetPg.stroke(darkColor);
+      targetPg.strokeWeight(4);
+      targetPg.noFill();
+      targetPg.rect(15, 15, targetPg.width - 30, targetPg.height - 30, 8); // 帶有一點圓角的框
 
-    // 未來如果要畫文字，就可以在這裡呼叫 drawCardText(...)
-  } 
-  else if (rarity === 'FullArt') {
-    // 全圖卡通常不需要複雜的外框，但可以加個很細的描邊收尾
-    targetPg.stroke(darkColor);
-    targetPg.strokeWeight(8);
-    targetPg.noFill();
-    targetPg.rect(0, 0, targetPg.width, targetPg.height);
+      // --- C. 繪製下方的文字說明區塊底板 ---
+      let textY = py + ph + 25; 
+      let textH = targetPg.height - textY - 25; 
+      
+      targetPg.fill(255, 255, 255, 180); 
+      targetPg.strokeWeight(2);
+      targetPg.rect(px, textY, pw, textH, 5); 
+
+      break;
+    }
+    case 'FullArt': {
+      // 全圖卡通常不需要複雜的外框，但可以加個很細的描邊收尾
+      targetPg.stroke(darkColor);
+      targetPg.strokeWeight(8);
+      targetPg.noFill();
+      targetPg.rect(0, 0, targetPg.width, targetPg.height);
+      break;
+    }
   }
 
   targetPg.pop();
@@ -204,6 +221,6 @@ function mouseWheel(event) {
 function keyPressed() {
   // 按下 'r' 重新生成隨機內容
   if (key === 'r' || key === 'R') {
-    drawPicture();
+    drawCard();
   }
 }
