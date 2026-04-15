@@ -232,6 +232,19 @@ function drawCardFrame(targetPg, rarity, px, py, pw, ph) {
       targetPg.strokeWeight(2);
       targetPg.rect(px, textY, pw, textH, 5); 
 
+      targetPg.fill(10, 10, 10);          // 設定文字顏色為深灰色
+      targetPg.noStroke();                // 文字不需要邊框
+      targetPg.textSize(24);              // 設定文字大小
+      targetPg.textAlign(CENTER, CENTER); // 設定對齊方式為置中
+      // 在底板的 X 與 Y 的正中心畫出文字
+      let textContent;
+      switch (rarity) {
+        case 'Normal': textContent = "普通"; break;
+        case 'Rare': textContent = "稀有"; break;
+        default: textContent = "Rarity: " + rarity; // 預防萬一有其他稀有度
+      }
+      targetPg.text(textContent, px + (pw / 2), textY + (textH / 2));
+
       break;
     }
     case 'FullArt': {
