@@ -6,8 +6,30 @@ let rotY = 0;
 let zoom = 500;
 let cardWidth = 500;
 let cardHeight = 700;
-let pictureWidth = 500; // 測試時可以改成 300 看看效果
-let pictureHeight = 700; // 測試時可以改成 400 看看效果
+let pictureWidth = 500; 
+let pictureHeight = 700;
+
+function gachaRoll(raritiesObj) {
+  let totalWeight = 0;
+  // 取得物件所有的 key，例如 ['Normal', 'Rare', 'FullArt']
+  let keys = Object.keys(raritiesObj); 
+
+  // 1. 計算總權重
+  for (let key of keys) {
+    totalWeight += raritiesObj[key].weight;
+  }
+
+  // 2. 在總權重範圍內取一個隨機數
+  let r = random(totalWeight);
+
+  // 3. 判斷落在哪個區間
+  for (let key of keys) {
+    if (r < raritiesObj[key].weight) {
+      return key; // 直接回傳 'Normal', 'Rare' 或 'FullArt'
+    }
+    r -= raritiesObj[key].weight;
+  }
+}
 
 function setup() {
   createCanvas(windowWidth, windowHeight, WEBGL);
@@ -49,15 +71,26 @@ function draw() {
 
 function drawCard() {
   // 1. === 抽卡機制 ===
-  let gachaRoll = random(); 
-  if (gachaRoll < 0.2) { 
-    currentRarity = 'FullArt';
-    pictureWidth = Rarity.FullArt.pictureWidth;
-    pictureHeight = Rarity.FullArt.pictureHeight;
-  } else {
-    currentRarity = 'Normal';
-    pictureWidth = Rarity.Normal.pictureWidth;
-    pictureHeight = Rarity.Normal.pictureHeight;
+  let rolledRarity = gachaRoll(Rarity); 
+  switch (rolledRarity) {
+    case 'Normal': {
+      currentRarity = 'Normal';
+      pictureWidth = Rarity.Normal.pictureWidth;
+      pictureHeight = Rarity.Normal.pictureHeight;
+      break;
+    }
+    case 'Rare': {
+      currentRarity = 'Rare';
+      pictureWidth = Rarity.Rare.pictureWidth;
+      pictureHeight = Rarity.Rare.pictureHeight;
+      break;
+    }
+    case 'FullArt': {
+      currentRarity = 'FullArt';
+      pictureWidth = Rarity.FullArt.pictureWidth;
+      pictureHeight = Rarity.FullArt.pictureHeight;
+      break;
+    }
   }
 
   // 2. === 計算圖片位置 ===
@@ -68,7 +101,8 @@ function drawCard() {
   
   // 【修正 1】變數改成 currentRarity
   switch (currentRarity) {
-    case 'Normal': {
+    case 'Normal':
+    case 'Rare': {
       drawCardFrame(pg, currentRarity, picX, picY, pictureWidth, pictureHeight);
       // 【修正 2】將算好的 picX, picY 傳入 drawPicture
       drawPicture(picX, picY); 
@@ -142,7 +176,8 @@ function drawCardFrame(targetPg, rarity, px, py, pw, ph) {
   targetPg.push();
   
   switch (rarity) {
-    case 'Normal': {
+    case 'Normal': 
+    case 'Rare': {
       // 【修正 3】把塗滿底色的動作移到這裡，避免全圖卡被蓋掉
       targetPg.background(mainColor);
 
