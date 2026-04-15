@@ -10,6 +10,13 @@ let cardWidth = 500;
 let cardHeight = 700;
 let pictureWidth = 500; 
 let pictureHeight = 700;
+let myShader;
+let matcapImg;
+
+function preload() {
+  matcapImg = loadImage('Assets/polishedGold.png');
+  myShader = loadShader('Shaders/basic.vert', 'Shaders/basic.frag');
+}
 
 function gachaRoll(raritiesObj) {
   let totalWeight = 0;
@@ -67,7 +74,14 @@ function draw() {
   rotateX(rotX);
   rotateY(rotY);
 
-  texture(pg);
+  // 啟動你的自訂 Shader
+  shader(myShader);
+  
+  // 把這三張圖傳進 Shader 裡
+  myShader.setUniform('u_baseMap', pg);
+  myShader.setUniform('u_maskMap', maskMap);
+  myShader.setUniform('u_matcapMap', matcapImg);
+  
   rect(-cardWidth/2, -cardHeight/2, cardWidth, cardHeight, cardWidth * 0.05); // 加入圓角
   image(maskMap, 300, 0); // 顯示遮罩畫布以供調試
   pop();
