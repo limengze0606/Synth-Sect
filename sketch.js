@@ -252,7 +252,30 @@ function drawCardFrame(targetPg, rarity, px, py, pw, ph) {
       targetPg.stroke(darkColor);
       targetPg.strokeWeight(8);
       targetPg.noFill();
-      targetPg.rect(0, 0, targetPg.width, targetPg.height);
+      targetPg.rect(0, 0, targetPg.width, targetPg.height, targetPg.width * 0.05);
+
+      // === 新增：全圖卡的右下角小文字框 ===
+      let boxW = 140;  // 文字框寬度
+      let boxH = 80;  // 文字框高度
+      let margin = 40; // 距離卡片邊緣的距離
+
+      // 計算文字框的 X 與 Y 座標 (右下角)
+      let boxX = targetPg.width - boxW - margin;
+      let boxY = targetPg.height - boxH - margin;
+
+      // 繪製文字框底板
+      targetPg.fill(255, 255, 255); // 稍微半透明的白色底
+      targetPg.stroke(darkColor);        // 外框顏色跟隨主題色
+      targetPg.strokeWeight(4);
+      targetPg.rect(boxX, boxY, boxW, boxH); // 加上圓角(8)
+
+      // 繪製文字
+      targetPg.fill(10, 10, 10);          // 深灰色文字
+      targetPg.noStroke();                // 文字不需要外框
+      targetPg.textSize(20);              // 設定文字大小
+      targetPg.textAlign(CENTER, CENTER); // 置中對齊
+      targetPg.text("全圖", boxX + (boxW / 2), boxY + (boxH / 2));
+
       break;
     }
   }
