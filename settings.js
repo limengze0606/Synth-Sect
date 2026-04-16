@@ -1,17 +1,17 @@
 // 定義稀有度和對應的圖片尺寸
 const Rarity = {
     Normal: {
-        weight: 80,
+        weight: 3,
         pictureWidth: 400,
         pictureHeight: 300,
     },
     Rare: {
-        weight: 15,
+        weight: 2,
         pictureWidth: 400,
         pictureHeight: 300,
     },
     FullArt: {
-        weight: 5,
+        weight: 1,
         pictureWidth: 500,
         pictureHeight: 700,
     }
