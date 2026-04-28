@@ -142,20 +142,20 @@ function drawCard() {
 }
 
 // 【修正 2】加上參數 px, py 來接收座標
+// 【修正】確保身體與翅膀共用同一個中心座標與旋轉角度
 function drawPicture(px, py) {
   // === 同步處理 picPg 與 maskPg 的尺寸與初始化 ===
   if (!picPg || picPg.width !== pictureWidth || picPg.height !== pictureHeight) {
     if (picPg) picPg.remove();
-    if (maskPg) maskPg.remove(); // 確保舊的遮罩也移除
+    if (maskPg) maskPg.remove(); 
     picPg = createGraphics(pictureWidth, pictureHeight);
-    maskPg = createGraphics(pictureWidth, pictureHeight); // 實例化遮罩畫布
+    maskPg = createGraphics(pictureWidth, pictureHeight); 
   }
 
   picPg.background(240, 240, 235);
-  maskPg.background(0); // 每次重畫時，遮罩畫布必須塗黑清空
-  maskMap.background(0); // 同步清空 maskMap
+  maskPg.background(0); 
+  maskMap.background(0); 
   
-  // 假設 drawBackground 存在於其他檔案
   if(typeof drawBackground === 'function') drawBackground(picPg);
   
   let mySeed = floor(random(100000));
@@ -174,15 +174,24 @@ function drawPicture(px, py) {
   // === 關鍵：主畫布與遮罩畫布必須同步變換 ===
   picPg.push(); maskPg.push();
   
+  // 1. 把畫筆原點 (0,0) 移動到中心，並旋轉
   picPg.translate(centerX, centerY); maskPg.translate(centerX, centerY);
   picPg.rotate(bodyRotation);        maskPg.rotate(bodyRotation);
   picPg.scale(globalScale);          maskPg.scale(globalScale);
 
+  // 2. 先畫翅膀 (這樣翅膀會在身體下方)
   if (hasSecondPair == 1){
     drawWingPair(picPg, maskPg, mySeed + 1, 10, flapAngle + PI/8, 0.65, forceColorType, ColorSet, fillStyle);
   }
   drawWingPair(picPg, maskPg, mySeed, 0, flapAngle, 1.0, forceColorType, ColorSet, fillStyle);
 
+  // 3. 再畫身體 (這樣身體會蓋在翅膀相交的地方上方)
+  let bodyType = 0; // 目前只有第一種身體
+  if (typeof drawInsectBody === 'function') {
+    drawInsectBody(picPg, maskPg, bodyType, mySeed);
+  }
+
+  // 4. 畫完之後再恢復畫布狀態
   picPg.pop(); maskPg.pop();
 
   if(typeof applyNoise === 'function') applyNoise(picPg, 0.1);
