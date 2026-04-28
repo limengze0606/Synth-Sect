@@ -34,16 +34,14 @@ function drawInsectBody(g, maskPg, bodyType, seedValue) {
 function drawButterflyBody(g, maskPg) {
   // 設定身體的基本比例
   let bodyColor = g.color(30, 30, 32);      // 深色主體
-  let highlightColor = g.color(80, 80, 85); // 邊緣受光色
-  let segmentColor = g.color(50, 50, 55);   // 節理顏色
 
   // 1. 繪製胸部 (Thorax) - 翅膀連接處
-  let thoraxW = 18;
-  let thoraxH = 35;
+  let thoraxW = 12;
+  let thoraxH = 20;
   drawPart(g, maskPg, 0, 0, thoraxW, thoraxH, bodyColor);
 
   // 2. 繪製頭部 (Head)
-  let headSize = 14;
+  let headSize = 10;
   let headY = -thoraxH * 0.6;
   drawPart(g, maskPg, 0, headY, headSize, headSize * 1.1, bodyColor);
 
@@ -51,9 +49,9 @@ function drawButterflyBody(g, maskPg) {
   drawAntennae(g, maskPg, 0, headY - 5);
 
   // 4. 繪製長腹部 (Abdomen)
-  let abdomenW = 14;
-  let abdomenH = 80;
-  let abdomenY = thoraxH * 0.4 + abdomenH * 0.5;
+  let abdomenW = 10;
+  let abdomenH = 40;
+  let abdomenY = thoraxH * 0.2 + abdomenH * 0.5;
   drawPart(g, maskPg, 0, abdomenY, abdomenW, abdomenH, bodyColor);
 
   // 5. 繪製腹部節理 (Abdomen Segments)
@@ -68,11 +66,11 @@ function drawPart(g, maskPg, x, y, w, h, col) {
   g.fill(col);
   g.ellipse(x, y, w, h);
   
-  if (maskPg) {
-    maskPg.noStroke();
-    maskPg.fill(255); // 遮罩填滿純白
-    maskPg.ellipse(x, y, w, h);
-  }
+  //if (maskPg) {
+  //  maskPg.noStroke();
+  //  maskPg.fill(255); // 遮罩填滿純白
+  //  maskPg.ellipse(x, y, w, h);
+  //}
 }
 
 /**
@@ -102,24 +100,38 @@ function drawSegments(g, maskPg, x, y, w, h, count) {
 
 /**
  * 繪製觸角
+ * @param {number} spread - 觸角向外展開的寬度 (預設 15)
+ * @param {number} len - 觸角的長度/高度 (預設 30)
  */
-function drawAntennae(g, maskPg, x, y) {
+function drawAntennae(g, maskPg, x, y, spread = 15, len = 30) {
   g.stroke(30, 30, 32);
   g.strokeWeight(1.2);
   g.noFill();
 
-  // 右觸角
-  g.bezier(x, y, x + 10, y - 20, x + 20, y - 30, x + 25, y - 50);
-  g.ellipse(x + 25, y - 51, 3, 3); // 觸角末端小球
-  
-  // 左觸角
-  g.bezier(x, y, x - 10, y - 20, x - 20, y - 30, x - 25, y - 50);
-  g.ellipse(x - 25, y - 51, 3, 3);
+  // 根據展開寬度與長度，自動計算控制點的弧度
+  let ctrl1X = spread * 0.4; // 稍微往外擴展
+  let ctrl1Y = len * 0.4;    // 高度的一半不到
+  let ctrl2X = spread * 0.8; // 更靠近末端
+  let ctrl2Y = len * 0.6;    
 
+  // === 右觸角 ===
+  g.bezier(x, y, x + ctrl1X, y - ctrl1Y, x + ctrl2X, y - ctrl2Y, x + spread, y - len);
+  g.fill(30, 30, 32); // 小球填滿顏色
+  g.ellipse(x + spread, y - len - 1, 3, 3); // 觸角末端小球
+  g.noFill(); // 畫完小球記得取消填滿，以免影響其他線條
+  
+  // === 左觸角 (左右對稱，只要把 X 相關的加號變減號) ===
+  g.bezier(x, y, x - ctrl1X, y - ctrl1Y, x - ctrl2X, y - ctrl2Y, x - spread, y - len);
+  g.fill(30, 30, 32);
+  g.ellipse(x - spread, y - len - 1, 3, 3);
+  g.noFill();
+
+  // === 遮罩特效同步 ===
   if (maskPg) {
     maskPg.stroke(255);
     maskPg.strokeWeight(1);
-    maskPg.bezier(x, y, x + 10, y - 20, x + 20, y - 30, x + 25, y - 50);
-    maskPg.bezier(x, y, x - 10, y - 20, x - 20, y - 30, x - 25, y - 50);
+    maskPg.noFill();
+    maskPg.bezier(x, y, x + ctrl1X, y - ctrl1Y, x + ctrl2X, y - ctrl2Y, x + spread, y - len);
+    maskPg.bezier(x, y, x - ctrl1X, y - ctrl1Y, x - ctrl2X, y - ctrl2Y, x - spread, y - len);
   }
 }
