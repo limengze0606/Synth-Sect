@@ -19,8 +19,10 @@ function drawInsectBody(g, maskPg, bodyType, seedValue) {
       drawButterflyBody(g, maskPg);
       break;
     case 1:
-      // 第二種身體：蜻蜓
       drawDragonflyBody(g, maskPg);
+      break;
+    case 2:
+      drawMothBody(g, maskPg);
       break;
     default:
       drawButterflyBody(g, maskPg);
@@ -90,6 +92,38 @@ function drawDragonflyBody(g, maskPg) {
   // 蜻蜓的觸角通常極短且不明顯，所以這裡不呼叫 drawAntennae，
   // 或者你可以呼叫一個極小參數的版本：
   // drawAntennae(g, maskPg, 0, headY - 4, 5, 10); 
+}
+
+/**
+ * 實作第三種身體：蛾 (Moth Body)
+ */
+function drawMothBody(g, maskPg) {
+  // 蛾的顏色通常比較偏向大地色系、棕灰色，這裡調暖一點點
+  let bodyColor = g.color(45, 40, 38);      
+  let highlightColor = g.color(90, 85, 80, 150); 
+  let segmentColor = g.color(30, 25, 25);   
+
+  // 1. 繪製胸部 (Thorax) - 蛾的胸部非常寬大且毛茸茸
+  let thoraxW = 26;
+  let thoraxH = 36;
+  drawPart(g, maskPg, 0, 0, thoraxW, thoraxH, bodyColor, highlightColor);
+
+  // 2. 繪製頭部 (Head) - 頭部相對較小，常被胸部的毛遮住一半
+  let headSize = 12;
+  let headY = -thoraxH * 0.55;
+  drawPart(g, maskPg, 0, headY, headSize, headSize, bodyColor, highlightColor);
+
+  // 3. 繪製觸角 - 蛾的專屬羽狀觸角
+  drawMothAntennae(g, maskPg, 0, headY - 4, 22, 35);
+
+  // 4. 繪製腹部 (Abdomen) - 蛾的腹部短而粗胖
+  let abdomenW = 22;
+  let abdomenH = 45;
+  let abdomenY = thoraxH * 0.4 + abdomenH * 0.5;
+  drawPart(g, maskPg, 0, abdomenY, abdomenW, abdomenH, bodyColor, highlightColor);
+
+  // 5. 繪製腹部節理 - 因為毛多，節理不需要像蜻蜓那麼密集
+  drawSegments(g, maskPg, 0, abdomenY, abdomenW, abdomenH, 6, segmentColor);
 }
 
 /**
@@ -167,5 +201,60 @@ function drawAntennae(g, maskPg, x, y, spread = 15, len = 30) {
     maskPg.noFill();
     maskPg.bezier(x, y, x + ctrl1X, y - ctrl1Y, x + ctrl2X, y - ctrl2Y, x + spread, y - len);
     maskPg.bezier(x, y, x - ctrl1X, y - ctrl1Y, x - ctrl2X, y - ctrl2Y, x - spread, y - len);
+  }
+}
+
+/**
+ * 繪製羽毛狀觸角 (專屬於蛾)
+ */
+function drawMothAntennae(g, maskPg, x, y, spread = 22, len = 35) {
+  g.stroke(45, 40, 38);
+  g.strokeWeight(1.5);
+  g.noFill();
+
+  // 控制點計算
+  let ctrl1X = spread * 0.4; 
+  let ctrl1Y = len * 0.3;    
+  let ctrl2X = spread * 0.8; 
+  let ctrl2Y = len * 0.7;    
+
+  // === 畫主幹 ===
+  // 右觸角主幹
+  g.bezier(x, y, x + ctrl1X, y - ctrl1Y, x + ctrl2X, y - ctrl2Y, x + spread, y - len);
+  // 左觸角主幹
+  g.bezier(x, y, x - ctrl1X, y - ctrl1Y, x - ctrl2X, y - ctrl2Y, x - spread, y - len);
+
+  if (maskPg) {
+    maskPg.stroke(255);
+    maskPg.strokeWeight(1.5);
+    maskPg.noFill();
+    maskPg.bezier(x, y, x + ctrl1X, y - ctrl1Y, x + ctrl2X, y - ctrl2Y, x + spread, y - len);
+    maskPg.bezier(x, y, x - ctrl1X, y - ctrl1Y, x - ctrl2X, y - ctrl2Y, x - spread, y - len);
+  }
+
+  // === 畫羽毛分支 (櫛齒) ===
+  let steps = 7; // 決定羽毛分支的密集度
+  g.strokeWeight(1);
+  if (maskPg) maskPg.strokeWeight(1);
+
+  for (let i = 1; i <= steps; i++) {
+    let t = i / (steps + 1); // 取得貝茲曲線上的進度 (0~1)
+    
+    // 利用 bezierPoint 取得曲線上特定點的座標
+    let pxR = g.bezierPoint(x, x + ctrl1X, x + ctrl2X, x + spread, t);
+    let pyR = g.bezierPoint(y, y - ctrl1Y, y - ctrl2Y, y - len, t);
+    
+    let pxL = g.bezierPoint(x, x - ctrl1X, x - ctrl2X, x - spread, t);
+    let pyL = g.bezierPoint(y, y - ctrl1Y, y - ctrl2Y, y - len, t);
+
+    // 畫出向外生長的小分支
+    let branchLen = 6;
+    g.line(pxR, pyR, pxR + branchLen, pyR + branchLen * 0.3);
+    g.line(pxL, pyL, pxL - branchLen, pyL + branchLen * 0.3);
+
+    if (maskPg) {
+      maskPg.line(pxR, pyR, pxR + branchLen, pyR + branchLen * 0.3);
+      maskPg.line(pxL, pyL, pxL - branchLen, pyL + branchLen * 0.3);
+    }
   }
 }
