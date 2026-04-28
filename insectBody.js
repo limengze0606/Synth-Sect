@@ -16,8 +16,11 @@ function drawInsectBody(g, maskPg, bodyType, seedValue) {
 
   switch (bodyType) {
     case 0:
-      // 蝴蝶類型的身體
       drawButterflyBody(g, maskPg);
+      break;
+    case 1:
+      // 第二種身體：蜻蜓
+      drawDragonflyBody(g, maskPg);
       break;
     default:
       drawButterflyBody(g, maskPg);
@@ -32,30 +35,61 @@ function drawInsectBody(g, maskPg, bodyType, seedValue) {
  * 實作第一種身體：蝴蝶 (Butterfly Body)
  */
 function drawButterflyBody(g, maskPg) {
-  // 設定身體的基本比例
-  let bodyColor = g.color(30, 30, 32);      // 深色主體
+  let bodyColor = g.color(30, 30, 32);      
+  let highlightColor = g.color(80, 80, 85, 150); 
+  let segmentColor = g.color(50, 50, 55);   
 
-  // 1. 繪製胸部 (Thorax) - 翅膀連接處
-  let thoraxW = 12;
-  let thoraxH = 20;
-  drawPart(g, maskPg, 0, 0, thoraxW, thoraxH, bodyColor);
+  let thoraxW = 18;
+  let thoraxH = 35;
+  drawPart(g, maskPg, 0, 0, thoraxW, thoraxH, bodyColor, highlightColor);
 
-  // 2. 繪製頭部 (Head)
-  let headSize = 10;
+  let headSize = 14;
   let headY = -thoraxH * 0.6;
-  drawPart(g, maskPg, 0, headY, headSize, headSize * 1.1, bodyColor);
+  drawPart(g, maskPg, 0, headY, headSize, headSize * 1.1, bodyColor, highlightColor);
 
-  // 3. 繪製觸角 (Antennae)
   drawAntennae(g, maskPg, 0, headY - 5);
 
-  // 4. 繪製長腹部 (Abdomen)
-  let abdomenW = 10;
-  let abdomenH = 40;
-  let abdomenY = thoraxH * 0.2 + abdomenH * 0.5;
-  drawPart(g, maskPg, 0, abdomenY, abdomenW, abdomenH, bodyColor);
+  let abdomenW = 14;
+  let abdomenH = 80;
+  let abdomenY = thoraxH * 0.4 + abdomenH * 0.5;
+  drawPart(g, maskPg, 0, abdomenY, abdomenW, abdomenH, bodyColor, highlightColor);
 
-  // 5. 繪製腹部節理 (Abdomen Segments)
-  drawSegments(g, maskPg, 0, abdomenY, abdomenW, abdomenH, 7);
+  drawSegments(g, maskPg, 0, abdomenY, abdomenW, abdomenH, 7, segmentColor);
+}
+
+/**
+ * 實作第二種身體：蜻蜓 (Dragonfly Body)
+ */
+function drawDragonflyBody(g, maskPg) {
+  // 設定蜻蜓的顏色 (通常可以帶一點金屬感或更深的色調)
+  let bodyColor = g.color(20, 25, 30);      
+  let highlightColor = g.color(70, 90, 100, 160); 
+  let segmentColor = g.color(40, 50, 60);   
+
+  // 1. 繪製胸部 (Thorax) - 蜻蜓的胸部比較厚實且略呈卵形
+  let thoraxW = 20;
+  let thoraxH = 30;
+  drawPart(g, maskPg, 0, 0, thoraxW, thoraxH, bodyColor, highlightColor);
+
+  // 2. 繪製頭部 (Head) - 蜻蜓頭部特徵是寬度大於長度 (大複眼)
+  let headW = 25;
+  let headH = 16;
+  let headY = -thoraxH * 0.6;
+  drawPart(g, maskPg, 0, headY, headW, headH, bodyColor, highlightColor);
+
+  // 3. 繪製腹部 (Abdomen) - 蜻蜓的腹部非常細長
+  let abdomenW = 10;
+  let abdomenH = 140; // 長度顯著增加
+  let abdomenY = thoraxH * 0.05 + abdomenH * 0.5;
+  drawPart(g, maskPg, 0, abdomenY, abdomenW, abdomenH, bodyColor, highlightColor);
+
+  // 4. 繪製腹部節理 - 蜻蜓腹部節理非常明顯且細密
+  // 增加 count 到 10，讓它看起來更像蜻蜓的長尾巴
+  drawSegments(g, maskPg, 0, abdomenY, abdomenW, abdomenH, 10, segmentColor);
+  
+  // 蜻蜓的觸角通常極短且不明顯，所以這裡不呼叫 drawAntennae，
+  // 或者你可以呼叫一個極小參數的版本：
+  // drawAntennae(g, maskPg, 0, headY - 4, 5, 10); 
 }
 
 /**
